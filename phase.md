@@ -2,16 +2,16 @@
 
 This workflow implements [the source-of-truth specification](TechSpace_Launchpad_SOURCE_OF_TRUTH.md), v2.0.0, which remains a draft pending stakeholder approval. The phases organize delivery; they do not approve open product decisions or expand scope. See [folder architecture](docs/architecture.md) for implementation locations.
 
-**Current state:** Phase 1 app shells, npm workspace tooling, shared packages, test definitions and setup documentation are implemented. Full dependency installation and build/browser validation are blocked by this session's filesystem permissions, so Phase 1 is **in progress**, not complete. Provider provisioning, migrations, authentication and product workflows remain pending. Product-policy decisions from Phase 0 remain unresolved.
+**Current state:** Phase 1 is **complete**. The user authorized event development ahead of Google login: MAIN migrations and development identity/event workflows are now implemented, with an optional Redis event-read function deployed. Google OAuth, university verification/admin-provisioning policy and the rest of Release 1 remain incomplete. Redis provider provisioning is pending. See the dated records below; Phase 0 policy decisions remain open and Phase 2/3 are not declared release-complete.
 
 ## Phase overview
 
 | Phase | Outcome | Depends on | Release | Status |
 |---|---|---|---|---|
 | 0 | Confirm scope and record decisions needed to begin | Stakeholder decisions | Foundation | Pending |
-| 1 | Runnable workspace and two app shells | 0 for affected decisions | Foundation | In progress: validation blocked |
-| 2 | Shared identity, student profiles and protected admin access | 1 | 1 | Pending |
-| 3 | Event publishing and atomic registration | 2 | 1 | Pending |
+| 1 | Runnable workspace and two app shells | 0 for affected decisions | Foundation | Complete: validated 20 November 2026 |
+| 2 | Shared identity, student profiles and protected admin access | 1 | 1 | Development foundation implemented; Google and policies pending |
+| 3 | Event publishing and atomic registration | 2 | 1 | Development workflow verified; release depends on Phase 2/policy |
 | 4 | Secure event QR attendance | 3 | 1 | Pending |
 | 5 | Targeted announcements, OD links and queued email | 3; email decisions | 1 | Pending |
 | 6 | Event materials and usable dashboards | 3-5 | 1 | Pending |
@@ -55,7 +55,17 @@ Phase 5 can proceed alongside Phase 4 after registration is stable. Phases 8 and
 - Executed the actual pure TypeScript browser-config validator with Node and assertions: **16 scenarios passed**, covering missing values, unsafe endpoints, private/invalid keys and valid public/local settings. This does not substitute for the full Vitest suite or backend connectivity checks.
 - Generated the lockfile with all five workspace entries; the dependency audit after updating Vitest reported **zero known vulnerabilities**. Checked source encoding, JSON, non-JSX TypeScript/configuration syntax, local document links and Markdown fences. JSX compilation, lint and real browser behavior remain unverified.
 - Full npm install failed with `EPERM` while creating `node_modules`; the elevated retry was rejected because this session disables sandbox approvals. Lockfile generation without installing dependencies is separate from that blocked action.
-- **Still required:** `npm ci`, `npm run check`, Chromium installation and `npm run test:e2e` on a machine/session that permits dependencies. Do not mark Phase 1 complete until these pass, including both app builds and real browser checks.
+- **At that time, still required:** `npm ci`, `npm run check`, Chromium installation and `npm run test:e2e` on a machine/session that permits dependencies. These checks were subsequently completed as recorded below.
+
+### Phase 1 validation record - 20 November 2026
+
+- Environment: Windows, Node.js **22.23.2** (matching `.nvmrc`), npm **10.9.8**.
+- `npm ci`: **passed**, installing 232 packages and auditing 244 packages with zero reported vulnerabilities. The root lockfile was unchanged.
+- `npm run check`: **passed**. TypeScript checks passed for both apps, all shared packages and tooling; ESLint reported zero errors and one non-blocking `react-refresh/only-export-components` warning for the shared Button's `buttonVariants` export; all **15 Vitest tests** passed; both student and admin production builds succeeded.
+- `npx playwright install chromium`: **passed**, installing Chromium and its required browser tooling.
+- `npm run test:e2e` with `CI=true`: **4/4 passed** using fresh student/admin dev servers. Both apps passed at desktop (1440×900) and mobile (390×844) viewport sizes: shell rendering, missing-configuration messages, setup navigation/reload, not-found recovery, no horizontal overflow on the final page, no uncaught page errors and no requests to Supabase-hosted backends.
+- **Outcome:** Phase 1 foundation exit criteria are satisfied locally. No application code changes were needed. npm reported an ESLint 9 support deprecation notice; upgrading lint tooling is separate maintenance work.
+- **Limits:** this is local Windows validation, not evidence of a GitHub CI run or deployed Cloudflare behavior. Mobile viewport tests do not establish physical-device camera, download or PWA readiness. Authentication, database connectivity, authorization and product workflows remain Phase 2 or later work. The specification remains a draft and Phase 0 policy decisions remain open.
 
 ## Phase 2 - Identity and authorization
 
@@ -78,6 +88,19 @@ Phase 5 can proceed alongside Phase 4 after registration is stable. Phases 8 and
 **Deliverable:** a student can discover and register for a real published event.
 
 **Exit:** AT-03 and AT-04 pass, including simultaneous duplicate and final-seat requests.
+
+### Development identity/events and Redis record - 20 November 2026
+
+- User-authorized delivery adjustment: simple UI and real event workflows precede Google integration. See [development access decision](docs/decisions/003-development-access.md); this does not approve production verification/admin policy or the whole draft specification.
+- Applied MAIN migrations `20261120010000` and `20261120011000`: profiles, protected admin records, audit logs, events, registrations, RLS, authenticated mutation RPCs, atomic capacity/duplicate enforcement, URL validation and event revision tracking. CERTIFICATES received no product migrations.
+- Added development-only real password test-account login, session restoration/sign-out, profile editing, backend-guarded admin views and loading/empty/error states. Students cannot self-verify or promote themselves. Normal profiles remain unverified.
+- Added admin event create/edit/status changes and paginated participant views; students browse events/details, register and view My Events. Roll normalization/immutability and academic-year limits remain provisional development constraints.
+- Implemented/deployed authenticated `events-read` to MAIN. Optional Redis REST caching uses fresh RLS visibility/version metadata and admin bypass, bounded TTL/timeouts and database fallback. Browser opt-in is off by default. No Redis provider/credentials, rate limiting or email queue are configured by this work. Live Redis hit/expiry/outage verification and traffic capacity testing remain pending.
+- `npm run check`: TypeScript (apps/shared/backend/tooling), ESLint, **32 unit tests** and both builds pass. One pre-existing shared Button Fast Refresh warning and Vite bundle-size advisories remain non-blocking.
+- `npm run test:e2e` with `CI=true`: **4/4** foundation navigation tests pass at desktop/mobile viewport sizes. Tests now use dedicated ports 5183/5184, leaving regular 5173/5174 development sessions alone.
+- MAIN SQL suite: **49 security/validation assertions pass**, with fixtures rolled back. Actual simultaneous HTTP tests: **3/3 races pass** (six final-seat attempts, six same-student attempts and concurrent admin capacity change). See [database runbook](docs/runbooks/database-events.md).
+- `npm run test:live`: **one real integrated browser/API scenario passes**, covering admin draft/publish/close, hidden drafts, student profile update, mobile-viewport registration/My Events, full-event failure, admin participant records, non-admin denial, isolation/direct-write denial, unverified denial, sign-out and authenticated deployed function reads. Synthetic accounts/events are removed afterward. A profile refresh remount issue found by this check was fixed.
+- **Limits:** Google onboarding AT-01 remains unverified. AT-02/03/04 behavior was exercised with synthetic development identities, not approved production onboarding. No frontend deployment, physical-device camera/PWA workflow, real Redis service or production load capacity has been verified. Later phases and release gates remain open.
 
 ## Phase 4 - Attendance
 

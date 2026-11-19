@@ -1,6 +1,6 @@
 # Frontend build and deployment
 
-Phase 1 prepares independent static builds. It does not create Cloudflare projects or publish a production service. Authentication, database policies and product workflows are later phases.
+The two apps have independent static builds. This work has not created Cloudflare projects or published either frontend. Development event workflows use MAIN migrations and real sessions; Google OAuth and production identity/provisioning policies remain incomplete, so publishing a build does not make the product launch-ready.
 
 ## Build locations
 
@@ -18,11 +18,11 @@ Both outputs include a `_redirects` file so client routes can resolve to `index.
 
 ## Environment boundaries
 
-Each build may receive only its Project 1 `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. Values prefixed with `VITE_` are public and can appear in the JavaScript bundle. Never supply Project 1/2 service-role keys, email provider credentials or other secrets to a frontend build.
+Each build may receive its Project 1 `VITE_MAIN_SUPABASE_URL`, `VITE_MAIN_SUPABASE_PUBLISHABLE_KEY` and optional `VITE_MAIN_EVENTS_CACHE_ENABLED` flag. Values prefixed with `VITE_` are public and can appear in the JavaScript bundle. Never supply Project 1/2 service-role keys, Redis REST tokens, email provider credentials or other secrets to a frontend build.
 
-Keep future server secrets in the selected protected backend's environment. Project 2 is not configured or contacted in Phase 1. Do not add a Project 2 browser client.
+Redis configuration belongs to the MAIN Edge Function environment; see the [Redis runbook](redis-events.md) for exact deployment-origin CORS settings before enabling the cache flag. Project 2 is linked for future work but neither frontend contacts it. Do not add a Project 2 browser client.
 
-OAuth callback origins and RLS must be configured and verified in Phase 2 before sign-in or admin operations are enabled. Camera scanning, PWA install/update behavior and recovery verification belong to their later delivery phases.
+The password test-account form is compiled only in Vite development mode. Production builds currently have no interactive login until Google is connected. MAIN RLS and protected RPCs enforce admin operations even for an existing session. Configure OAuth callback origins and settle university verification/admin provisioning before production access. Camera scanning, PWA install/update behavior and recovery verification belong to later delivery phases.
 
 ## Release check
 

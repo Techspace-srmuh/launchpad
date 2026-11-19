@@ -8,9 +8,11 @@ The specification is **v2.0.0, draft pending stakeholder approval**. Use it as t
 
 ## Current repository state
 
-The repository contains Phase 1 React/Vite app shells and shared packages in an npm workspace. See [folder architecture](docs/architecture.md), [delivery phases](phase.md) and README for setup/commands. Login, migrations, backend provisioning and product workflows are not implemented. Phase 1 completion remains pending until dependency installation, type/lint/unit checks, both builds and browser smoke tests pass; consult the phase validation record before claiming readiness.
+The repository contains two React/Vite apps and shared packages in an npm workspace. Phase 1 is locally validated. MAIN now has applied identity/event migrations, RLS, audited admin operations and atomic registration; the apps expose development test-account access and event workflows. The optional Redis event-read function is deployed to MAIN, but Redis itself is not provisioned. Google sign-in, institutional verification/admin-provisioning policy and later product phases remain incomplete. See [folder architecture](docs/architecture.md), [delivery phases](phase.md) and README for setup, evidence and limits. Development verification does not establish production readiness.
 
 Use Node.js 22.12+ on the Node 22 line for the baseline and `npm ci` from the root. Run `npm run check` for typechecking, lint, unit tests and both builds; install Chromium with `npx playwright install chromium` and run `npm run test:e2e` for navigation checks. Keep root `package-lock.json` in sync with all workspace manifests. Do not confuse a generated lockfile or source review with a successful install/build.
+
+Use explicit MAIN/CERTIFICATES CLI working directories as described in the [Supabase setup runbook](docs/runbooks/supabase-setup.md). Real SQL/security/concurrency and live-browser tests require the linked development project; follow the [database runbook](docs/runbooks/database-events.md). Keep test-account access development-only. Redis is an optional server-side cache, never an authority for registration capacity or private access; see the [Redis runbook](docs/runbooks/redis-events.md).
 
 ## Product boundaries
 

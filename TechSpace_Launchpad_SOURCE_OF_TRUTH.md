@@ -288,6 +288,7 @@ flowchart TD
 | Sensitive mutations | Authenticated Edge Functions / protected PostgreSQL RPC as appropriate |
 | Certificate storage | Supabase Project 2 private storage; server-only privileged access |
 | Emails | External email provider with background/queued job processing (provider and worker TBD) |
+| Cache | User-authorized optional Redis REST cache for authenticated event content, with fresh database visibility/version checks and database fallback; implementation exists, provider/provisioning and live Redis verification pending. See the [Redis decision record](docs/decisions/002-redis-direction.md) and [runbook](docs/runbooks/redis-events.md). |
 | OD/resources | Google Drive shared/restricted links; URL records only |
 | Galleries | Google Photos shared-album links; URL records only |
 | App form factor | PWA / HTTPS, no native APK |
@@ -296,6 +297,8 @@ flowchart TD
 **Cross-project certificate contract (required):** browser authenticates with Project 1 → calls protected endpoint → endpoint verifies Project 1 session, user ownership/admin authority, and issuance status → uses *server-held* Project 2 credentials → returns a bounded download/issuance result. Never pass Project 2 service-role credentials to either frontend. Treat cross-project calls and regeneration failures as explicit error states.
 
 **Hosting note:** static Cloudflare Pages hosting does not itself provide guaranteed scheduled background jobs. Select and test the email queue worker, scheduler, retries, and certificate cleanup mechanism before depending on them.
+
+**Authorized development order, 20 November 2026:** the user requested functional event workflows and a simple UI before Google OAuth integration. Development-only real test-account login may exercise the identity/data foundation; this does not change the Google sign-in requirement for release or approve university verification/admin-provisioning policies. See the [development access decision](docs/decisions/003-development-access.md). Redis credentials are server-only, cached data is disposable, and registration correctness remains enforced atomically in PostgreSQL.
 
 ## 10. Storage, cost and retention rules
 
