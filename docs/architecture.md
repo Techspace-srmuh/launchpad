@@ -1,6 +1,6 @@
 # Repository architecture
 
-This is a directory skeleton for the architecture in the [source-of-truth specification](../TechSpace_Launchpad_SOURCE_OF_TRUTH.md). It does not yet contain runnable applications, dependencies, database migrations, or deployed infrastructure. Empty directories contain `.gitkeep` so Git retains them.
+This workspace implements the Phase 1 foundation structure for the [source-of-truth specification](../TechSpace_Launchpad_SOURCE_OF_TRUTH.md): two React/Vite app shells, shared source packages and development checks. Installation/build/browser validation remains pending as recorded in [phase.md](../phase.md). It does not contain product workflows, database migrations or deployed infrastructure. Future directories contain `.gitkeep` so Git retains them.
 
 ## Folder responsibilities
 
@@ -37,6 +37,8 @@ The two Supabase directories represent separate projects. Their future CLI confi
 
 The email worker and scheduler remain undecided. Add their executable entry points only after choosing the runtime; queue persistence belongs to Project 1. Static hosting alone is not a scheduler.
 
-## Scaffolding next
+## Workspace tooling
 
-Select the package manager and workspace configuration in Phase 1, then create real Vite applications and shared package manifests in these directories. Add verified install, development, build and test commands to the README. No placeholder package manifests or pretend run commands are included in this skeleton.
+Use npm workspaces and the root lockfile. Each app has a Vite configuration and independently runs TypeScript checking before its build. Shared packages export TypeScript source for Vite to bundle and have separate typecheck scripts. Root tooling provides ESLint, Vitest for validation logic, Playwright for desktop/mobile navigation checks, and CI running both builds. See the README for commands and the [frontend deployment runbook](runbooks/frontend-deployment.md) for build roots and outputs.
+
+The shared Supabase package separates pure browser-configuration validation from client creation. App shells only validate settings; they do not create a client, send requests or imply authentication. The shared UI package contains the Button primitive, class-name helper and theme tokens; add components when a feature actually needs them.
