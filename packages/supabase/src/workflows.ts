@@ -1,0 +1,78 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+export interface ProfileRecord {
+  user_id: string;
+  full_name: string;
+  roll_number: string;
+  department: string;
+  academic_year: number;
+  verification_status: "unverified" | "verified";
+}
+
+export type EventStatus = "draft" | "published" | "closed" | "completed" | "cancelled";
+
+export interface EventRecord {
+  id: string;
+  title: string;
+  description: string;
+  poster_url: string | null;
+  venue: string;
+  starts_at: string;
+  ends_at: string;
+  registration_opens_at: string;
+  registration_closes_at: string;
+  capacity: number | null;
+  status: EventStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RegistrationRecord {
+  id: string;
+  event_id: string;
+  user_id: string;
+  created_at: string;
+}
+
+const messages: Record<string, string> = {
+  PROFILE_REQUIRED: "Complete your student profile before registering.",
+  VERIFICATION_REQUIRED: "University verification is required before registration. Your profile cannot verify itself.",
+  EVENT_NOT_OPEN: "Registration is not open for this event.",
+  EVENT_FULL: "This event has reached its capacity.",
+  ALREADY_REGISTERED: "You are already registered for this event.",
+  ADMIN_REQUIRED: "This action requires an authorized admin account.",
+  AUTH_REQUIRED: "Your session has expired. Sign in again.",
+  ROLL_NUMBER_IMMUTABLE: "Your claimed roll number cannot be changed here.",
+  CAPACITY_BELOW_REGISTRATIONS: "Capacity cannot be reduced below the number of existing registrations.",
+  EVENT_NOT_FOUND: "This event is unavailable or you do not have access to it.",
+  PUBLISHED_EVENT_CANNOT_RETURN_TO_DRAFT: "An event that has been published cannot return to draft. Close or cancel it instead.",
+  EVENT_STATUS_FINAL: "Completed and cancelled events cannot change status.",
+  INVALID_EVENT: "The event could not be saved. Check the event fields and try again.",
+};
+
+export function workflowError(error: unknown): string {
+  const message = error && typeof error === "object" && "message" in error ? String(error.message) : "The request failed. Please try again.";
+  for (const [code, text] of Object.entries(messages)) if (message.includes(code)) return text;
+  if (error && typeof error === "object" && "code" in error) {
+    if (error.code === "23505" && message.includes("roll_number")) return "That roll number is already claimed by another account.";
+    if (error.code === "23514") return message.includes("events")
+      ? "Check the field values and date order. Registration must close after it opens; the event must end after it starts. Poster links must use HTTPS."
+      : "Check your profile values. Roll numbers must contain 2–40 letters, numbers or hyphens; academic year must be between 1 and 8.";
+  }
+  if (/jwt expired|invalid jwt|session.*expired/i.test(message)) return "Your session has expired. Sign in again.";
+  return message;
+}
+
+export async function readEvents(client: SupabaseClient, cacheEnabled: boolean, eventId?: string, offset = 0): Promise<EventRecord[]> {
+  if (cacheEnabled) {
+    const result = await client.functions.invoke("events-read", { body: eventId ? { event_id: eventId } : { limit: 100, offset } });
+    if (!result.error && result.data && Array.isArray(result.data.events)) return result.data.events as EventRecord[];
+    // A missing/unavailable optional cache must not prevent RLS-protected reads.
+    // Authentication remains enforced by the database on the fallback path.
+  }
+  let query = client.from("events").select("*").order("starts_at", { ascending: true }).order("id", { ascending: true }).range(offset, offset + 99);
+  if (eventId) query = query.eq("id", eventId);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as EventRecord[];
+}

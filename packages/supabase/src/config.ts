@@ -27,26 +27,26 @@ function validEndpoint(value: unknown): value is string {
 }
 
 export function readBrowserConfig(env: Record<string, unknown>): BrowserConfigResult {
-  const rawUrl = env.VITE_SUPABASE_URL;
-  const rawKey = env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const rawUrl = env.VITE_MAIN_SUPABASE_URL;
+  const rawKey = env.VITE_MAIN_SUPABASE_PUBLISHABLE_KEY;
 
   if (typeof rawUrl !== "string" || rawUrl.trim() === "") {
-    return { ok: false, error: "VITE_SUPABASE_URL is required." };
+    return { ok: false, error: "VITE_MAIN_SUPABASE_URL is required." };
   }
   if (typeof rawKey !== "string" || rawKey.trim() === "") {
-    return { ok: false, error: "VITE_SUPABASE_PUBLISHABLE_KEY is required." };
+    return { ok: false, error: "VITE_MAIN_SUPABASE_PUBLISHABLE_KEY is required." };
   }
   if (!validEndpoint(rawUrl)) {
     return {
       ok: false,
-      error: "VITE_SUPABASE_URL must be an HTTPS origin (HTTP is allowed for localhost).",
+      error: "VITE_MAIN_SUPABASE_URL must be an HTTPS origin (HTTP is allowed for localhost).",
     };
   }
   if (rawKey.startsWith("sb_secret_")) {
     return { ok: false, error: "A Supabase publishable key is required; secret keys are not allowed in the browser." };
   }
   if (!PUBLISHABLE_KEY_PATTERN.test(rawKey)) {
-    return { ok: false, error: "VITE_SUPABASE_PUBLISHABLE_KEY must be a Supabase publishable key." };
+    return { ok: false, error: "VITE_MAIN_SUPABASE_PUBLISHABLE_KEY must be a Supabase publishable key." };
   }
 
   return {

@@ -2,7 +2,10 @@ import { Activity, ArrowLeft, ArrowRight, ArrowUpRight, Bell, CalendarDays, Circ
 import { Link, NavLink, Route, Routes } from "react-router-dom";
 import type { ReactNode } from "react";
 import { Button, cn } from "@launchpad/ui";
-import { readBrowserConfig } from "@launchpad/supabase";
+import { readBrowserConfig, IdentityProvider } from "@launchpad/supabase";
+
+import { AccessGate, AccountPage, ProfilePage } from "../features/account";
+import { AdminEvents, EventEditor, EventParticipants } from "../features/events";
 
 const browserConfig = readBrowserConfig(import.meta.env);
 
@@ -16,7 +19,7 @@ function SetupNotice() {
 
 function Layout({ children }: { children: ReactNode }) {
   return <div className="app-shell">
-    <header className="topbar"><div className="topbar-inner"><Brand /><nav className="main-nav" aria-label="Main navigation"><NavLink to="/" end aria-label="Overview" className={({ isActive }) => cn("nav-link", isActive && "nav-link-active")}><Activity size={16} />Overview</NavLink><NavLink to="/setup" aria-label="Setup" className={({ isActive }) => cn("nav-link", isActive && "nav-link-active")}><Settings2 size={16} />Setup</NavLink></nav><div className="topbar-meta"><span className="role-chip"><span />Admin space</span><span className="avatar-placeholder" aria-label="No account signed in">A</span></div></div></header>
+    <header className="topbar"><div className="topbar-inner"><Brand /><nav className="main-nav" aria-label="Main navigation"><NavLink to="/" end aria-label="Overview" className={({ isActive }) => cn("nav-link", isActive && "nav-link-active")}><Activity size={16} />Overview</NavLink><NavLink to="/events" aria-label="Events" className="nav-link"><CalendarDays size={16} />Events</NavLink><NavLink to="/account" aria-label="Account" className="nav-link"><LockKeyhole size={16} />Account</NavLink><NavLink to="/setup" aria-label="Setup" className={({ isActive }) => cn("nav-link", isActive && "nav-link-active")}><Settings2 size={16} />Setup</NavLink></nav><div className="topbar-meta"><span className="role-chip"><span />Admin space</span><span className="avatar-placeholder" aria-label="Admin app">A</span></div></div></header>
     <main className="page-wrap">{children}</main>
     <footer className="site-footer"><span>TechSpace | Launchpad Control</span><span>Event operations, made clear.</span></footer>
   </div>;
@@ -26,7 +29,7 @@ function OverviewPage() {
   return <>
     <SetupNotice />
     <section className="welcome-row"><div><span className="eyebrow"><Orbit size={14} /> CONTROL ROOM</span><h1>Good work starts<br /><span>with a clear view.</span></h1><p>One calm place to organize the TechSpace events your community shows up for.</p></div><div className="welcome-orbit" aria-hidden="true"><span className="orbit-core"><Orbit size={25} /></span><i /><b /></div></section>
-    <section className="status-panel" aria-label="Dashboard connection status"><div className="status-panel-heading"><div><span className="eyebrow muted-eyebrow">WORKSPACE STATUS</span><h2>Your control room is taking shape.</h2></div><span className="not-live-pill"><span />NOT CONNECTED</span></div><p>Events, registrations, and attendance will appear here after the shared Project 1 connection and admin access are implemented.</p><div className="status-empty"><span className="empty-glyph"><Activity size={21} /></span><strong>No workspace data is connected</strong><span>There are no event records or metrics to show in this preview.</span></div></section>
+    <section className="status-panel" aria-label="Dashboard connection status"><div className="status-panel-heading"><div><span className="eyebrow muted-eyebrow">WORKSPACE STATUS</span><h2>Manage your events.</h2></div><span className="not-live-pill"><span />EVENT WORKFLOWS</span></div><p>Authorized admins can now create events, publish registration windows, and review participant records. Attendance and announcements are later workflows.</p><div className="status-empty"><span className="empty-glyph"><Activity size={21} /></span><strong>Open event management</strong><span>Sign in with an authorized account to see real events and registrations.</span></div><Button asChild><Link to="/events">Manage events <ArrowRight size={16} /></Link></Button></section>
     <section className="content-section" aria-labelledby="tools-heading"><div className="section-heading"><div><span className="eyebrow muted-eyebrow">OPERATIONS</span><h2 id="tools-heading">Tools for the work ahead.</h2></div><span className="section-side-note">Planned admin workflows will connect here as they’re built.</span></div>
       <div className="tool-grid">
         <article className="tool-card"><span className="tool-icon violet"><CalendarDays size={18} /></span><span className="tool-status">PLANNED</span><h3>Events & registrations</h3><p>Create an event, manage details, and review its participant list.</p><span className="tool-foot">EVENT OPERATIONS <ArrowUpRight size={14} /></span></article>
@@ -34,13 +37,13 @@ function OverviewPage() {
         <article className="tool-card"><span className="tool-icon mint"><Bell size={18} /></span><span className="tool-status">PLANNED</span><h3>Announcements</h3><p>Share event updates and resources with the right audience.</p><span className="tool-foot">COMMUNITY UPDATES <ArrowUpRight size={14} /></span></article>
       </div>
     </section>
-    <div className="security-note"><LockKeyhole size={16} /><span>Admin access will be granted by a protected server-side role. This shell has no authentication or privileged actions.</span><Link to="/setup" aria-label="Open setup"><ArrowRight size={16} /></Link></div>
+    <div className="security-note"><LockKeyhole size={16} /><span>Admin access requires a protected server-side role. Open Events to create and publish events using an authorized account.</span><Link to="/setup" aria-label="Open setup"><ArrowRight size={16} /></Link></div>
   </>;
 }
 
 function SetupPage() {
-  return <section className="setup-page"><Link to="/" className="back-link"><ArrowLeft size={14} /> Back to overview</Link><div className="setup-heading"><span className="setup-icon"><Settings2 size={22} /></span><span className="eyebrow muted-eyebrow">LOCAL CONFIGURATION</span><h1>Set up the<br /><span>control room.</span></h1><p>Provide the public browser settings for Project 1 when available. This preview does not authenticate or contact the backend.</p></div>
-    <div className="config-card"><div className="config-card-head"><span className={cn("config-led", browserConfig.ok && "config-led-ready")} /><div><strong>{browserConfig.ok ? "Browser settings found" : "Browser settings missing"}</strong><span>{browserConfig.ok ? "The required public values are present." : browserConfig.error}</span></div><span className="config-badge">{browserConfig.ok ? "READY" : "ACTION NEEDED"}</span></div><div className="setup-steps"><div className="setup-step"><span>01</span><p>Copy <code>.env.example</code> to <code>.env.local</code> in <code>apps/admin</code>.</p></div><div className="setup-step"><span>02</span><p>Set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> to the Project 1 public values.</p></div><div className="setup-step"><span>03</span><p>Restart the dev server. Browser keys are public; service-role and other secrets stay server-side.</p></div></div><div className="config-foot"><CircleHelp size={16} /><span>Admin sign-in and role checks are deferred to the identity phase.</span></div></div>
+  return <section className="setup-page"><Link to="/" className="back-link"><ArrowLeft size={14} /> Back to overview</Link><div className="setup-heading"><span className="setup-icon"><Settings2 size={22} /></span><span className="eyebrow muted-eyebrow">LOCAL CONFIGURATION</span><h1>Set up the<br /><span>control room.</span></h1><p>Provide the public browser settings for Project 1 when available. Event workflows use authenticated access to this project.</p></div>
+    <div className="config-card"><div className="config-card-head"><span className={cn("config-led", browserConfig.ok && "config-led-ready")} /><div><strong>{browserConfig.ok ? "Browser settings found" : "Browser settings missing"}</strong><span>{browserConfig.ok ? "The required public values are present." : browserConfig.error}</span></div><span className="config-badge">{browserConfig.ok ? "READY" : "ACTION NEEDED"}</span></div><div className="setup-steps"><div className="setup-step"><span>01</span><p>Copy <code>.env.example</code> to <code>.env.local</code> in <code>apps/admin</code>.</p></div><div className="setup-step"><span>02</span><p>Set <code>VITE_MAIN_SUPABASE_URL</code> and <code>VITE_MAIN_SUPABASE_PUBLISHABLE_KEY</code> to the Project 1 public values.</p></div><div className="setup-step"><span>03</span><p>Restart the dev server. Browser keys are public; service-role and other secrets stay server-side.</p></div></div><div className="config-foot"><CircleHelp size={16} /><span>Admin authority is checked by the backend. Google sign-in is deferred; development supports test accounts.</span></div></div>
   </section>;
 }
 
@@ -49,5 +52,5 @@ function NotFoundPage() {
 }
 
 export default function App() {
-  return <Layout><Routes><Route path="/" element={<OverviewPage />} /><Route path="/setup" element={<SetupPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></Layout>;
+  return <IdentityProvider config={browserConfig.ok ? browserConfig.config : null}><Layout><Routes><Route path="/" element={<OverviewPage />} /><Route path="/setup" element={<SetupPage />} /><Route path="/account" element={<AccountPage />} /><Route path="/profile" element={<AccessGate><ProfilePage /></AccessGate>} /><Route path="/events" element={<AccessGate admin><AdminEvents /></AccessGate>} /><Route path="/events/new" element={<AccessGate admin><EventEditor /></AccessGate>} /><Route path="/events/:eventId/edit" element={<AccessGate admin><EventEditor /></AccessGate>} /><Route path="/events/:eventId/participants" element={<AccessGate admin><EventParticipants /></AccessGate>} /><Route path="*" element={<NotFoundPage />} /></Routes></Layout></IdentityProvider>;
 }

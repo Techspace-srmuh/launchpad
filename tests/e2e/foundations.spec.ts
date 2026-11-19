@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 const surfaces = [
-  { name: "student", origin: "http://127.0.0.1:5173" },
-  { name: "admin", origin: "http://127.0.0.1:5174" },
+  { name: "student", origin: "http://127.0.0.1:5183" },
+  { name: "admin", origin: "http://127.0.0.1:5184" },
 ] as const;
 
 for (const surface of surfaces) {
@@ -23,10 +23,10 @@ for (const surface of surfaces) {
 
     await page.getByRole("navigation").getByRole("link", { name: "Setup", exact: true }).click();
     await expect(page).toHaveURL(`${surface.origin}/setup`);
-    await expect(page.getByText("VITE_SUPABASE_URL is required.", { exact: true })).toBeVisible();
+    await expect(page.getByText("VITE_MAIN_SUPABASE_URL is required.", { exact: true })).toBeVisible();
     await page.reload();
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.locator("body")).toContainText("VITE_SUPABASE_PUBLISHABLE_KEY");
+    await expect(page.locator("body")).toContainText("VITE_MAIN_SUPABASE_PUBLISHABLE_KEY");
 
     await page.goto(`${surface.origin}/not-a-launchpad-page`);
     await expect(page.locator("main")).toContainText("404");

@@ -100,3 +100,46 @@ code { padding: 2px 5px; border: 1px solid rgba(178,185,214,.12); border-radius:
 .setup-notice { max-width: 100%; flex-wrap: wrap; line-height: 1.4; }
 .setup-notice > span:nth-child(2), .config-card-head > div, .setup-step p { min-width: 0; }
 .config-card-head div span, .setup-step p, code { overflow-wrap: anywhere; }
+
+/* Functional event workflows */
+.workflow-section { margin: 32px 0 48px; min-width: 0; }
+.workflow-panel { margin: 28px 0; padding: 24px; border: 1px solid rgba(176,185,220,.18); border-radius: 12px; background: #111728; min-width: 0; }
+.workflow-panel h1, .workflow-section h1 { font-size: 28px; line-height: 1.2; letter-spacing: -.03em; margin: 0 0 18px; }
+.workflow-panel h2 { margin: 12px 0; font-size: 20px; overflow-wrap: anywhere; }
+.workflow-section p, .workflow-panel p { color: #aeb7ce; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
+.workflow-panel a:not([class]), .workflow-section > a, .workflow-actions > a:not([class]) { color: #c8bbff; text-decoration: underline; text-underline-offset: 3px; }
+.workflow-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 24px 0; }
+.workflow-heading h1 { margin: 0; }
+.workflow-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.workflow-form { display: grid; gap: 18px; max-width: 600px; }
+.workflow-form label { display: grid; gap: 8px; min-width: 0; font-size: 14px; color: #d3d9e8; }
+.workflow-form label > span { color: #a0aac2; font-size: 12px; }
+.workflow-form input, .workflow-form textarea, .workflow-form select { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid #45506b; border-radius: 6px; color: #edf0fb; background: #090e1b; font: inherit; color-scheme: dark; }
+.workflow-form input[readonly] { color: #a0aac2; background: #1b2334; }
+.workflow-form textarea { resize: vertical; }
+.workflow-form button { justify-self: start; }
+.workflow-panel [role="alert"], .workflow-section [role="alert"] { padding: 12px; border: 1px solid #995b68; border-radius: 6px; color: #ffb8c1; background: #301b26; }
+.event-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,290px),1fr)); gap: 18px; }
+.event-grid .workflow-panel { margin: 0; }
+.event-status { display: inline-block; padding: 4px 8px; border: 1px solid #4e5276; border-radius: 6px; color: #cec3ff; font-size: 12px; text-transform: capitalize; }
+.event-description { white-space: pre-wrap; }
+.event-facts { display: grid; grid-template-columns: 120px 1fr; gap: 12px; font-size: 14px; line-height: 1.6; }
+.event-facts dt { color: #99a3bb; }
+.event-facts dd { margin: 0; overflow-wrap: anywhere; }
+.form-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.table-scroll { max-width: 100%; overflow-x: auto; }
+.table-scroll table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table-scroll th, .table-scroll td { padding: 12px; border-bottom: 1px solid #303a53; text-align: left; }
+@media (max-width: 700px) {
+  .topbar { height: auto; }
+  .topbar-inner { flex-wrap: wrap; padding-top: 12px; }
+  .topbar-meta { display: none; }
+  .main-nav { order: 3; width: 100%; justify-content: space-between; margin: 7px 0; }
+  .nav-link { font-size: 11px; flex-direction: column; gap: 3px; padding: 7px 4px; }
+  .nav-link-active::after { bottom: -7px; }
+  .workflow-panel { padding: 18px; }
+  .workflow-panel h1, .workflow-section h1 { font-size: 25px; }
+  .event-facts, .form-columns { grid-template-columns: 1fr; }
+  .event-facts { gap: 4px; }
+  .event-facts dd { margin-bottom: 10px; }
+}

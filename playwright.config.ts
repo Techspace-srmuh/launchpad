@@ -9,7 +9,7 @@ export default defineConfig({
   retries: ci ? 1 : 0,
   reporter: ci ? "github" : "list",
   use: {
-    baseURL: "http://127.0.0.1:5173",
+    baseURL: "http://127.0.0.1:5183",
     trace: "retain-on-failure",
   },
   projects: [
@@ -30,16 +30,16 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "npm run dev:student",
-      env: { VITE_SUPABASE_URL: "", VITE_SUPABASE_PUBLISHABLE_KEY: "" },
-      url: "http://127.0.0.1:5173",
+      command: "npm --workspace apps/student run dev -- --port 5183",
+      env: { VITE_MAIN_SUPABASE_URL: "", VITE_MAIN_SUPABASE_PUBLISHABLE_KEY: "" },
+      url: "http://127.0.0.1:5183",
       reuseExistingServer: !ci,
       timeout: 120_000,
     },
     {
-      command: "npm run dev:admin",
-      env: { VITE_SUPABASE_URL: "", VITE_SUPABASE_PUBLISHABLE_KEY: "" },
-      url: "http://127.0.0.1:5174",
+      command: "npm --workspace apps/admin run dev -- --port 5184",
+      env: { VITE_MAIN_SUPABASE_URL: "", VITE_MAIN_SUPABASE_PUBLISHABLE_KEY: "" },
+      url: "http://127.0.0.1:5184",
       reuseExistingServer: !ci,
       timeout: 120_000,
     },

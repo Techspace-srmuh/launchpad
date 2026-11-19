@@ -16,10 +16,11 @@
     "build:student": "npm --workspace apps/student run build",
     "build:admin": "npm --workspace apps/admin run build",
     "build": "npm run build:student && npm run build:admin",
-    "typecheck": "npm run typecheck --workspaces --if-present && tsc --noEmit -p tsconfig.tooling.json",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc --noEmit -p tsconfig.tooling.json && tsc --noEmit -p supabase/main/supabase/functions/tsconfig.json",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test",
+    "test:live": "node scripts/test-live-events.mjs",
     "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
