@@ -8,7 +8,9 @@ The specification is **v2.0.0, draft pending stakeholder approval**. Use it as t
 
 ## Current repository state
 
-The repository currently contains product documentation and a directory skeleton, not an implemented application. See [folder architecture](docs/architecture.md) and [delivery phases](phase.md). There is no configured package manager, runnable app scaffold, install command, build script, or test command. Inspect the repository before assuming these exist. Document actual commands after creating and verifying them.
+The repository contains Phase 1 React/Vite app shells and shared packages in an npm workspace. See [folder architecture](docs/architecture.md), [delivery phases](phase.md) and README for setup/commands. Login, migrations, backend provisioning and product workflows are not implemented. Phase 1 completion remains pending until dependency installation, type/lint/unit checks, both builds and browser smoke tests pass; consult the phase validation record before claiming readiness.
+
+Use Node.js 22.12+ on the Node 22 line for the baseline and `npm ci` from the root. Run `npm run check` for typechecking, lint, unit tests and both builds; install Chromium with `npx playwright install chromium` and run `npm run test:e2e` for navigation checks. Keep root `package-lock.json` in sync with all workspace manifests. Do not confuse a generated lockfile or source review with a successful install/build.
 
 ## Product boundaries
 

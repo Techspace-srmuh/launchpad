@@ -2,14 +2,14 @@
 
 This workflow implements [the source-of-truth specification](TechSpace_Launchpad_SOURCE_OF_TRUTH.md), v2.0.0, which remains a draft pending stakeholder approval. The phases organize delivery; they do not approve open product decisions or expand scope. See [folder architecture](docs/architecture.md) for implementation locations.
 
-**Current state:** documentation and directory skeleton exist. No runnable apps, provider configuration, migrations, or product features have been implemented. Every delivery phase below is pending.
+**Current state:** Phase 1 app shells, npm workspace tooling, shared packages, test definitions and setup documentation are implemented. Full dependency installation and build/browser validation are blocked by this session's filesystem permissions, so Phase 1 is **in progress**, not complete. Provider provisioning, migrations, authentication and product workflows remain pending. Product-policy decisions from Phase 0 remain unresolved.
 
 ## Phase overview
 
 | Phase | Outcome | Depends on | Release | Status |
 |---|---|---|---|---|
 | 0 | Confirm scope and record decisions needed to begin | Stakeholder decisions | Foundation | Pending |
-| 1 | Runnable workspace and two app shells | 0 for affected decisions | Foundation | Pending |
+| 1 | Runnable workspace and two app shells | 0 for affected decisions | Foundation | In progress: validation blocked |
 | 2 | Shared identity, student profiles and protected admin access | 1 | 1 | Pending |
 | 3 | Event publishing and atomic registration | 2 | 1 | Pending |
 | 4 | Secure event QR attendance | 3 | 1 | Pending |
@@ -45,6 +45,17 @@ Phase 5 can proceed alongside Phase 4 after registration is stable. Phases 8 and
 **Deliverable:** two independently buildable app shells and documented commands.
 
 **Exit:** fresh setup and both builds work with clear missing-configuration errors. No mock workflow is presented as production functionality.
+
+### Phase 1 implementation record - 19 November 2026
+
+- Implemented npm workspaces, root lockfile, separate React/TypeScript/Vite app configurations and development ports 5173/5174.
+- Added Tailwind 4, shared shadcn-style Button/theme utilities, browser configuration validation/client factory, and shared app metadata.
+- Added home/overview, setup and not-found routing in both apps. No sign-in, backend calls, metrics or event mutations are simulated.
+- Added TypeScript/ESLint/Vitest/Playwright commands, CI, environment examples, static SPA rewrites and deployment instructions.
+- Executed the actual pure TypeScript browser-config validator with Node and assertions: **16 scenarios passed**, covering missing values, unsafe endpoints, private/invalid keys and valid public/local settings. This does not substitute for the full Vitest suite or backend connectivity checks.
+- Generated the lockfile with all five workspace entries; the dependency audit after updating Vitest reported **zero known vulnerabilities**. Checked source encoding, JSON, non-JSX TypeScript/configuration syntax, local document links and Markdown fences. JSX compilation, lint and real browser behavior remain unverified.
+- Full npm install failed with `EPERM` while creating `node_modules`; the elevated retry was rejected because this session disables sandbox approvals. Lockfile generation without installing dependencies is separate from that blocked action.
+- **Still required:** `npm ci`, `npm run check`, Chromium installation and `npm run test:e2e` on a machine/session that permits dependencies. Do not mark Phase 1 complete until these pass, including both app builds and real browser checks.
 
 ## Phase 2 - Identity and authorization
 
