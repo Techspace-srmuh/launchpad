@@ -1,15 +1,17 @@
+"use client";
+
 import { useState, type FormEvent, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { useIdentity, workflowError } from "@launchpad/supabase";
 import { Button } from "@launchpad/ui";
 
 export function AccessGate({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
   const identity = useIdentity();
   if (identity.loading) return <p role="status">Checking your account…</p>;
-  if (!identity.client) return <section className="workflow-panel"><h1>Setup needed</h1><p>Configure the MAIN Supabase project to use this workflow.</p><Link to="/setup">View setup</Link></section>;
-  if (!identity.session) return <section className="workflow-panel"><h1>Sign in required</h1><p>An authenticated account is required to access event records.</p><Link to="/account">Open account</Link></section>;
-  if (identity.error) return <section className="workflow-panel"><h1>Account access could not be checked</h1><p role="alert">{identity.error}</p><Button onClick={() => void identity.refresh()}>Retry</Button><Link to="/account">Open account</Link></section>;
-  if (admin && !identity.isAdmin) return <section className="workflow-panel"><h1>Admin access required</h1><p>This account is not authorized for admin operations.</p><Link to="/account">Open account</Link></section>;
+  if (!identity.client) return <section className="workflow-panel"><h1>Setup needed</h1><p>Configure the MAIN Supabase project to use this workflow.</p><Link href="/setup">View setup</Link></section>;
+  if (!identity.session) return <section className="workflow-panel"><h1>Sign in required</h1><p>An authenticated account is required to access event records.</p><Link href="/account">Open account</Link></section>;
+  if (identity.error) return <section className="workflow-panel"><h1>Account access could not be checked</h1><p role="alert">{identity.error}</p><Button onClick={() => void identity.refresh()}>Retry</Button><Link href="/account">Open account</Link></section>;
+  if (admin && !identity.isAdmin) return <section className="workflow-panel"><h1>Admin access required</h1><p>This account is not authorized for admin operations.</p><Link href="/account">Open account</Link></section>;
   return children;
 }
 
@@ -21,7 +23,7 @@ export function AccountPage() {
   const [busy, setBusy] = useState(false);
   async function signIn(event: FormEvent) {
     event.preventDefault();
-    if (!client || !import.meta.env.DEV) return;
+    if (!client || !(process.env.NODE_ENV === "development")) return;
     setBusy(true); setError("");
     try {
       const result = await client.auth.signInWithPassword({ email: email.trim(), password });
@@ -38,9 +40,9 @@ export function AccountPage() {
     finally { setBusy(false); }
   }
   return <section className="workflow-panel"><h1>Account</h1>
-    {!client ? <p>MAIN Supabase settings are missing. <Link to="/setup">View setup</Link>.</p> : loading ? <p role="status">Checking your account…</p> : session ? <><p>Signed in as <strong>{session.user.email}</strong></p><div className="workflow-actions"><Button disabled={busy} onClick={() => void signOut()}>Sign out</Button><Link to="/events">Open events</Link></div></> : <>
+    {!client ? <p>MAIN Supabase settings are missing. <Link href="/setup">View setup</Link>.</p> : loading ? <p role="status">Checking your account…</p> : session ? <><p>Signed in as <strong>{session.user.email}</strong></p><div className="workflow-actions"><Button disabled={busy} onClick={() => void signOut()}>Sign out</Button><Link href="/events">Open events</Link></div></> : <>
       <p>Google sign-in is not connected yet.</p>
-      {import.meta.env.DEV ? <form onSubmit={(event) => void signIn(event)} className="workflow-form"><p>Development access uses real test accounts provisioned in Supabase. It does not grant admin permission or university verification.</p><label>Email<input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label><Button disabled={busy} type="submit">{busy ? "Signing in…" : "Sign in"}</Button></form> : <p>Sign-in will be available when Google authentication is configured.</p>}
+      {(process.env.NODE_ENV === "development") ? <form onSubmit={(event) => void signIn(event)} className="workflow-form"><p>Development access uses real test accounts provisioned in Supabase. It does not grant admin permission or university verification.</p><label>Email<input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label><Button disabled={busy} type="submit">{busy ? "Signing in…" : "Sign in"}</Button></form> : <p>Sign-in will be available when Google authentication is configured.</p>}
     </>}
     {(error || identityError) && <p role="alert">{error || identityError}</p>}
   </section>;

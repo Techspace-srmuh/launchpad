@@ -1,3 +1,5 @@
+"use client";
+
 import { createContext, useContext } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { ProfileRecord } from "./workflows";

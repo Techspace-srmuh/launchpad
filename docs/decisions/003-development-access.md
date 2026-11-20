@@ -8,7 +8,7 @@ The user requested simple UI and working core workflows, with external credentia
 
 ## Development access
 
-Both Vite apps expose a real Supabase email/password test-account form only under `import.meta.env.DEV`. Production bundles omit the development form. There are no hard-coded accounts, session tokens, role overrides or browser verification shortcuts. Existing authenticated sessions still require server-side authorization for every protected action.
+Both Next.js apps expose a real Supabase email/password test-account form only when `process.env.NODE_ENV === "development"` (previously Vite's `import.meta.env.DEV`). Production bundles omit the development form. There are no hard-coded accounts, session tokens, role overrides or browser verification shortcuts. Existing authenticated sessions still require server-side authorization for every protected action.
 
 Owner-provisioned synthetic accounts allow development and end-to-end checks. The automated live browser/concurrency harnesses create isolated fixtures, mark only those test profiles verified, assign admin only to a specific test identity and remove their fixtures afterward. The ordinary profile RPC defaults to unverified and cannot change verification/admin authority.
 

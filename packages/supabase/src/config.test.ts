@@ -8,11 +8,11 @@ describe("readBrowserConfig", () => {
   it("reports missing URL and key without echoing environment values", () => {
     expect(readBrowserConfig({})).toEqual({
       ok: false,
-      error: "VITE_MAIN_SUPABASE_URL is required.",
+      error: "NEXT_PUBLIC_MAIN_SUPABASE_URL is required.",
     });
-    expect(readBrowserConfig({ VITE_MAIN_SUPABASE_URL: "https://example.supabase.co" })).toEqual({
+    expect(readBrowserConfig({ NEXT_PUBLIC_MAIN_SUPABASE_URL: "https://example.supabase.co" })).toEqual({
       ok: false,
-      error: "VITE_MAIN_SUPABASE_PUBLISHABLE_KEY is required.",
+      error: "NEXT_PUBLIC_MAIN_SUPABASE_PUBLISHABLE_KEY is required.",
     });
   });
 
@@ -25,8 +25,8 @@ describe("readBrowserConfig", () => {
     "https://project.supabase.co#fragment",
   ])("rejects malformed or unsafe URL %s", (url) => {
     const result = readBrowserConfig({
-      VITE_MAIN_SUPABASE_URL: url,
-      VITE_MAIN_SUPABASE_PUBLISHABLE_KEY: publicKey,
+      NEXT_PUBLIC_MAIN_SUPABASE_URL: url,
+      NEXT_PUBLIC_MAIN_SUPABASE_PUBLISHABLE_KEY: publicKey,
     });
     expect(result.ok).toBe(false);
     expect(JSON.stringify(result)).not.toContain("password");
@@ -36,8 +36,8 @@ describe("readBrowserConfig", () => {
     "rejects non-public keys without returning the key: %s",
     (key) => {
       const result = readBrowserConfig({
-        VITE_MAIN_SUPABASE_URL: "https://project.supabase.co",
-        VITE_MAIN_SUPABASE_PUBLISHABLE_KEY: key,
+        NEXT_PUBLIC_MAIN_SUPABASE_URL: "https://project.supabase.co",
+        NEXT_PUBLIC_MAIN_SUPABASE_PUBLISHABLE_KEY: key,
       });
       expect(result.ok).toBe(false);
       expect(JSON.stringify(result)).not.toContain(key);
@@ -49,8 +49,8 @@ describe("readBrowserConfig", () => {
     (url) => {
       expect(
         readBrowserConfig({
-          VITE_MAIN_SUPABASE_URL: url,
-          VITE_MAIN_SUPABASE_PUBLISHABLE_KEY: publicKey,
+          NEXT_PUBLIC_MAIN_SUPABASE_URL: url,
+          NEXT_PUBLIC_MAIN_SUPABASE_PUBLISHABLE_KEY: publicKey,
         }),
       ).toEqual({ ok: true, config: { url, publishableKey: publicKey } });
     },
@@ -59,8 +59,8 @@ describe("readBrowserConfig", () => {
   it("accepts an HTTPS public endpoint and normalizes it to an origin", () => {
     expect(
       readBrowserConfig({
-        VITE_MAIN_SUPABASE_URL: "https://project.supabase.co/",
-        VITE_MAIN_SUPABASE_PUBLISHABLE_KEY: publicKey,
+        NEXT_PUBLIC_MAIN_SUPABASE_URL: "https://project.supabase.co/",
+        NEXT_PUBLIC_MAIN_SUPABASE_PUBLISHABLE_KEY: publicKey,
       }),
     ).toEqual({
       ok: true,

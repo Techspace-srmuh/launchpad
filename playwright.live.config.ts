@@ -12,14 +12,14 @@ export default defineConfig({
   webServer: [
     {
       command: "npm --workspace apps/student run dev -- --port 5183",
-      env: { VITE_MAIN_EVENTS_CACHE_ENABLED: "false" },
+      env: { NEXT_PUBLIC_MAIN_EVENTS_CACHE_ENABLED: "false" },
       url: "http://127.0.0.1:5183",
       reuseExistingServer: false,
       timeout: 120_000,
     },
     {
       command: "npm --workspace apps/admin run dev -- --port 5184",
-      env: { VITE_MAIN_EVENTS_CACHE_ENABLED: "false" },
+      env: { NEXT_PUBLIC_MAIN_EVENTS_CACHE_ENABLED: "false" },
       url: "http://127.0.0.1:5184",
       reuseExistingServer: false,
       timeout: 120_000,

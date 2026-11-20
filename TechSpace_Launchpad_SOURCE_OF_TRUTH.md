@@ -2,7 +2,7 @@
 title: TechSpace Launchpad — Source of Truth
 version: 2.0.0
 status: Draft — pending stakeholder approval
-updated: 2026-11-19
+updated: 2026-11-20
 product: TechSpace Launchpad
 organization: TechSpace
 scope: Single university club
@@ -280,9 +280,9 @@ flowchart TD
 
 | Layer | Chosen/proposed approach |
 |---|---|
-| Frontend | React + TypeScript + Vite |
+| Frontend | Next.js App Router + React + TypeScript; user-authorized migration, 20 November 2026 |
 | UI | Tailwind CSS + shadcn/ui |
-| Hosting | Two Cloudflare Pages deployments, separate routes/URLs |
+| Hosting | Two independent Next.js deployments, separate routes/URLs; Vercel configuration included by user request. Cloudflare needs a compatible Next.js runtime adapter instead of static Pages output. |
 | Login | Supabase Auth in Project 1, Google OAuth |
 | Main DB | Supabase 1 / PostgreSQL with row-level security |
 | Sensitive mutations | Authenticated Edge Functions / protected PostgreSQL RPC as appropriate |
@@ -296,7 +296,9 @@ flowchart TD
 
 **Cross-project certificate contract (required):** browser authenticates with Project 1 → calls protected endpoint → endpoint verifies Project 1 session, user ownership/admin authority, and issuance status → uses *server-held* Project 2 credentials → returns a bounded download/issuance result. Never pass Project 2 service-role credentials to either frontend. Treat cross-project calls and regeneration failures as explicit error states.
 
-**Hosting note:** static Cloudflare Pages hosting does not itself provide guaranteed scheduled background jobs. Select and test the email queue worker, scheduler, retries, and certificate cleanup mechanism before depending on them.
+**Hosting note:** Next.js/Vercel compatibility does not itself provision or guarantee scheduled background jobs. Select and test the email queue worker, scheduler, retries, and certificate cleanup mechanism before depending on them.
+
+**Authorized framework change, 20 November 2026:** the user requested migration of both Vite apps to Next.js and compatibility with Vercel. This changes frontend routing/build/deployment contracts; existing Supabase identity, RLS, protected RPCs and release boundaries remain. See the [migration decision](docs/decisions/004-nextjs-migration.md). The overall v2.0.0 specification remains draft pending stakeholder approval; this request does not approve unresolved production policies.
 
 **Authorized development order, 20 November 2026:** the user requested functional event workflows and a simple UI before Google OAuth integration. Development-only real test-account login may exercise the identity/data foundation; this does not change the Google sign-in requirement for release or approve university verification/admin-provisioning policies. See the [development access decision](docs/decisions/003-development-access.md). Redis credentials are server-only, cached data is disposable, and registration correctness remains enforced atomically in PostgreSQL.
 

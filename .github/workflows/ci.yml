@@ -26,3 +26,5 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run browser smoke tests
         run: npm run test:e2e
+      - name: Check production routing and development-login boundary
+        run: npm run test:production

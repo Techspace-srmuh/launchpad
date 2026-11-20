@@ -2,6 +2,8 @@
 
 **Status:** implementation decision for the authorized Phase 1 scope. This does not approve the draft product specification or resolve onboarding/production policies.
 
+The original Vite/React Router/build decisions below are superseded by [004 — Next.js migration](004-nextjs-migration.md). Other boundaries remain in effect.
+
 ## Decisions
 
 - Use npm workspaces and a single root lockfile. Both applications consume shared TypeScript source through workspace packages; Vite bundles it into each independent build.

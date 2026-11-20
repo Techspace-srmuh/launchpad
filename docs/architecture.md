@@ -1,16 +1,16 @@
 # Repository architecture
 
-This workspace implements two React/Vite apps, shared identity helpers, development event workflows and MAIN database migrations under the [draft source-of-truth specification](../TechSpace_Launchpad_SOURCE_OF_TRUTH.md). Phase 1 is locally validated. MAIN migrations are applied and the authenticated `events-read` Edge Function is deployed; the frontend websites and Redis provider are not deployed/provisioned by this work. Google login and production identity policies remain deferred. See [phase.md](../phase.md) for validation and limits.
+This workspace implements two Next.js App Router apps, shared identity helpers, development event workflows and MAIN database migrations under the [draft source-of-truth specification](../TechSpace_Launchpad_SOURCE_OF_TRUTH.md). MAIN migrations are applied and the authenticated `events-read` Edge Function is deployed; the frontend websites and Redis provider are not deployed/provisioned. Each app has Vercel configuration. Google login and production identity policies remain deferred. See [phase.md](../phase.md) for validation and limits.
 
 ## Folder responsibilities
 
 | Path | Responsibility |
 |---|---|
-| `apps/student/` | Launchpad student web app; independent Vite build and deployment |
-| `apps/admin/` | Launchpad Control admin web app; independent Vite build and deployment |
-| `apps/*/src/app/` | App startup, providers, routing and layouts |
+| `apps/student/` | Launchpad student web app; independent Next.js build and deployment |
+| `apps/admin/` | Launchpad Control admin web app; independent Next.js build and deployment |
+| `apps/*/src/app/` | File-based pages, dynamic event routes, root layout and loading/error/not-found boundaries |
 | `apps/*/src/features/` | Event-centered features, added as each delivery phase begins |
-| `apps/*/src/components/` | Components specific to that application |
+| `apps/*/src/components/` | App-specific components, including client shell and identity provider boundary |
 | `apps/*/src/lib/` | App-specific integration/configuration helpers; browser-safe values only |
 | `apps/*/public/` | Public static assets, including PWA assets when implemented |
 | `packages/ui/src/` | Shared UI primitives; no admin permissions or server credentials |
@@ -43,6 +43,8 @@ The email worker and scheduler remain undecided. Add their executable entry poin
 
 ## Workspace tooling
 
-Use npm workspaces and the root lockfile. Each app has a Vite configuration and independently runs TypeScript checking before its build. Shared packages export TypeScript source for Vite to bundle and have separate typecheck scripts. Root tooling provides ESLint, Vitest for validation logic, Playwright for desktop/mobile navigation checks, and CI running both builds. See the README for commands and the [frontend deployment runbook](runbooks/frontend-deployment.md) for build roots and outputs.
+Use npm workspaces and the root lockfile. Each app has Next.js and Tailwind PostCSS configuration. Typechecking generates Next.js route types before checking TypeScript; builds also check application types. Shared packages export TypeScript source through `transpilePackages` and have separate typecheck scripts. Workspace roots are explicit for Turbopack and output tracing. Root tooling provides ESLint, Vitest, Playwright and CI running both builds. See the README and [deployment runbook](runbooks/frontend-deployment.md).
+
+Root layouts provide metadata and global styles. A client shell keeps the identity provider mounted across Next.js navigation. Features use `next/link` and `next/navigation`; dynamic event routes resolve IDs at request time. Vercel uses separate projects with output in `.next` and no SPA catch-all rewrite. Supabase continues to enforce authorization; the migration adds no privileged Next.js endpoints or second session system. See [decision 004](decisions/004-nextjs-migration.md).
 
 The shared Supabase package separates pure browser-configuration validation from client creation. Configured apps create a client, restore sessions and fetch account permissions; event pages use real MAIN records. Missing configuration leaves the shell/setup pages usable. Development-only account forms use real Supabase password login with explicitly provisioned test accounts. Production Google login remains unimplemented. The shared UI package contains the Button primitive, class-name helper and theme tokens; add components when a feature actually needs them.

@@ -8,7 +8,7 @@ The specification is **v2.0.0, draft pending stakeholder approval**. Use it as t
 
 ## Current repository state
 
-The repository contains two React/Vite apps and shared packages in an npm workspace. Phase 1 is locally validated. MAIN now has applied identity/event migrations, RLS, audited admin operations and atomic registration; the apps expose development test-account access and event workflows. The optional Redis event-read function is deployed to MAIN, but Redis itself is not provisioned. Google sign-in, institutional verification/admin-provisioning policy and later product phases remain incomplete. See [folder architecture](docs/architecture.md), [delivery phases](phase.md) and README for setup, evidence and limits. Development verification does not establish production readiness.
+The repository contains two Next.js App Router apps and shared packages in an npm workspace. Phase 1 is locally validated. MAIN has identity/event migrations, RLS, audited admin operations and atomic registration; the apps expose development test-account access and event workflows. Separate Vercel deployment configurations are included; no frontend is deployed. The optional Redis event-read function is deployed to MAIN, but Redis itself is not provisioned. Google sign-in, institutional verification/admin-provisioning policy and later phases remain incomplete. See [folder architecture](docs/architecture.md), [delivery phases](phase.md) and README for setup, evidence and limits. Development verification does not establish production readiness.
 
 Use Node.js 22.12+ on the Node 22 line for the baseline and `npm ci` from the root. Run `npm run check` for typechecking, lint, unit tests and both builds; install Chromium with `npx playwright install chromium` and run `npm run test:e2e` for navigation checks. Keep root `package-lock.json` in sync with all workspace manifests. Do not confuse a generated lockfile or source review with a successful install/build.
 
@@ -28,8 +28,8 @@ Use explicit MAIN/CERTIFICATES CLI working directories as described in the [Supa
 
 | Concern | Baseline in the specification |
 |---|---|
-| Frontends | React, TypeScript, Vite; Tailwind CSS and shadcn/ui |
-| Hosting | Two Cloudflare Pages deployments |
+| Frontends | Next.js App Router, React, TypeScript; Tailwind CSS and shadcn/ui |
+| Hosting | Two independent Next.js deployments; Vercel configuration included. Cloudflare needs a compatible runtime adapter instead of the former static Pages upload. |
 | Identity | Supabase Project 1 Auth with Google OAuth |
 | Operational data | Project 1 PostgreSQL with row-level security |
 | Privileged operations | Authenticated Edge Functions or protected PostgreSQL RPC |

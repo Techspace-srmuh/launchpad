@@ -2,7 +2,7 @@
 
 This workflow implements [the source-of-truth specification](TechSpace_Launchpad_SOURCE_OF_TRUTH.md), v2.0.0, which remains a draft pending stakeholder approval. The phases organize delivery; they do not approve open product decisions or expand scope. See [folder architecture](docs/architecture.md) for implementation locations.
 
-**Current state:** Phase 1 is **complete**. The user authorized event development ahead of Google login: MAIN migrations and development identity/event workflows are now implemented, with an optional Redis event-read function deployed. Google OAuth, university verification/admin-provisioning policy and the rest of Release 1 remain incomplete. Redis provider provisioning is pending. See the dated records below; Phase 0 policy decisions remain open and Phase 2/3 are not declared release-complete.
+**Current state:** Phase 1 is **complete**. Both apps now use Next.js App Router with separate Vercel configurations, as requested on 20 November 2026. MAIN migrations and development identity/event workflows are implemented, with an optional Redis event-read function deployed. Google OAuth, university verification/admin-provisioning policy and the rest of Release 1 remain incomplete. Redis provisioning and frontend deployment are pending. See the dated records below; Phase 0 policy decisions remain open and Phase 2/3 are not declared release-complete.
 
 ## Phase overview
 
@@ -36,7 +36,7 @@ Phase 5 can proceed alongside Phase 4 after registration is stable. Phases 8 and
 
 ## Phase 1 - Workspace and app foundations
 
-- Choose and document a package manager/workspace layout; create actual React/TypeScript/Vite app shells under `apps/student` and `apps/admin`.
+- Choose and document a package manager/workspace layout; create Next.js/React/TypeScript app shells under `apps/student` and `apps/admin` (originally Vite; migrated by user request on 20 November 2026).
 - Configure Tailwind/shadcn UI and shared packages only where needed.
 - Establish separate app builds, routing/layouts, browser-safe environment handling and backend secret boundaries.
 - Add lint/type/build/test scripts and CI checks using the tooling actually installed.
@@ -66,6 +66,19 @@ Phase 5 can proceed alongside Phase 4 after registration is stable. Phases 8 and
 - `npm run test:e2e` with `CI=true`: **4/4 passed** using fresh student/admin dev servers. Both apps passed at desktop (1440×900) and mobile (390×844) viewport sizes: shell rendering, missing-configuration messages, setup navigation/reload, not-found recovery, no horizontal overflow on the final page, no uncaught page errors and no requests to Supabase-hosted backends.
 - **Outcome:** Phase 1 foundation exit criteria are satisfied locally. No application code changes were needed. npm reported an ESLint 9 support deprecation notice; upgrading lint tooling is separate maintenance work.
 - **Limits:** this is local Windows validation, not evidence of a GitHub CI run or deployed Cloudflare behavior. Mobile viewport tests do not establish physical-device camera, download or PWA readiness. Authentication, database connectivity, authorization and product workflows remain Phase 2 or later work. The specification remains a draft and Phase 0 policy decisions remain open.
+
+### Next.js migration record - 20 November 2026
+
+- User-authorized migration: both Vite apps now use Next.js **16.4.6** App Router, file-based pages and runtime event IDs, shared client identity, Next.js navigation, metadata and loading/error/not-found boundaries. Supabase RLS/RPC contracts and existing workflows are preserved. See [decision 004](docs/decisions/004-nextjs-migration.md).
+- Replaced Vite application entry points, React Router, Tailwind Vite integration and static SPA rewrites with Next.js/PostCSS configuration. Public variables are now `NEXT_PUBLIC_MAIN_*`; local environment values were renamed without being displayed or committed. Browser configuration validation and development-only password access remain enforced.
+- Added separate app-level Vercel configurations and documented project roots, workspace installation, Node 22, shared-source access and environment boundaries. No Vercel project is linked or deployed. `.next` requires a Next.js runtime; the former static Cloudflare Pages upload is no longer applicable.
+- Clean `npm ci`: **passed**, 202 packages installed, 214 audited, zero reported vulnerabilities. Node **22.23.2**, npm **10.9.8**. npm reports the existing ESLint 9 support deprecation notice; lint itself passes.
+- `npm run check`: **passed** after the clean install, including application/shared/backend/tooling types, ESLint, **32 unit tests** and both production builds.
+- `npm run test:e2e`: **8/8 passed** across desktop/mobile viewports, covering client navigation, direct routes, dynamic event route access gates, active links, back/reload behavior and HTTP 404 recovery. Cold development compilation requires a longer assertion timeout than the former Vite server.
+- `npm run test:production`: **4/4 passed**, exercising real built servers, dynamic event routes/reloads, signed-out access gates, HTTP 404 recovery and omission of development login. Added this suite to CI. Test suites use separate output directories.
+- `npm run test:live`: **one integrated browser/API scenario passed** against linked MAIN, covering real admin draft/publish/edit/close, student profile update/registration/My Events, full/duplicate/unverified failures, participant records, non-admin denial, private-record isolation, direct-write denial, deployed function reads and sign-out. The test now scopes alerts to page content because Next.js supplies its own accessibility route announcer. Temporary synthetic accounts and event records are removed by the harness.
+- **Recommended next work:** complete Phase 2 Google OAuth for both origins and obtain university-verification/admin-provisioning decisions so hosted users can sign in. Then implement Phase 4 secure event QR attendance. This recommendation does not approve those policies or start another feature phase; certificates and private questions remain Release 2.
+- **Limits:** local checks do not establish hosted Vercel deployment, approved production identity policy, physical-device PWA/camera readiness or a production-ready release.
 
 ## Phase 2 - Identity and authorization
 
@@ -139,7 +152,7 @@ Phase 5 can proceed alongside Phase 4 after registration is stable. Phases 8 and
 ## Phase 7 - Release 1 launch gate
 
 - Verify the full sign-in, publish, register, scan, announce and access-materials workflow on both apps.
-- Configure HTTPS, separate Cloudflare deployments, OAuth redirects and student PWA install/update behavior.
+- Configure HTTPS, separate Next.js deployments (Vercel configuration included), OAuth redirects and student PWA install/update behavior.
 - Run authorization/isolation checks, registration concurrency checks, queue failure checks and supported-mobile camera/download checks.
 - Set up independent database exports, protected recovery procedures, quota monitoring and tested restore; record runbooks in `docs/runbooks/`.
 - Resolve production retention/consent, domains and branding before rollout.

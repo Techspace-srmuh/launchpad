@@ -1,9 +1,12 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { Button } from "@launchpad/ui";
 import { readEvents, useIdentity, workflowError, type EventRecord, type RegistrationRecord } from "@launchpad/supabase";
 
-const cacheEnabled = import.meta.env.VITE_MAIN_EVENTS_CACHE_ENABLED === "true";
+const cacheEnabled = process.env.NEXT_PUBLIC_MAIN_EVENTS_CACHE_ENABLED === "true";
 const date = (value: string) => new Date(value).toLocaleString();
 
 export function StudentEvents({ mine = false }: { mine?: boolean }) {
@@ -35,13 +38,13 @@ export function StudentEvents({ mine = false }: { mine?: boolean }) {
     return () => { active = false; };
   }, [client, session, mine, version, page]);
   return <section className="workflow-section"><div className="workflow-heading"><h1>{mine ? "My events" : "Explore events"}</h1><Button variant="outline" onClick={() => setVersion((value) => value + 1)}>Refresh events</Button></div>
-    {loading ? <p role="status">Loading events…</p> : error ? <p role="alert">{error}</p> : !events.length ? <p>{mine ? "You have not registered for any events yet." : "No published events are available yet."}</p> : <div className="event-grid">{events.map((event) => <article className="workflow-panel" key={event.id}><span className="event-status">{event.status}</span><h2><Link to={`/events/${event.id}`}>{event.title}</Link></h2><p>{date(event.starts_at)}</p><p>{event.venue}</p><Link to={`/events/${event.id}`}>View event</Link></article>)}</div>}
+    {loading ? <p role="status">Loading events…</p> : error ? <p role="alert">{error}</p> : !events.length ? <p>{mine ? "You have not registered for any events yet." : "No published events are available yet."}</p> : <div className="event-grid">{events.map((event) => <article className="workflow-panel" key={event.id}><span className="event-status">{event.status}</span><h2><Link href={`/events/${event.id}`}>{event.title}</Link></h2><p>{date(event.starts_at)}</p><p>{event.venue}</p><Link href={`/events/${event.id}`}>View event</Link></article>)}</div>}
     {!loading && !error && (page > 0 || events.length >= 100) && <div className="workflow-actions"><Button variant="outline" disabled={page === 0} onClick={() => setPage((value) => value - 1)}>Previous page</Button><span>Page {page + 1}</span><Button variant="outline" disabled={events.length < 100} onClick={() => setPage((value) => value + 1)}>Next page</Button></div>}
   </section>;
 }
 
 export function StudentEventDetail() {
-  const { eventId } = useParams();
+  const { eventId } = useParams<{ eventId?: string }>();
   const { client, session, profile } = useIdentity();
   const [event, setEvent] = useState<EventRecord | null>(null);
   const [registration, setRegistration] = useState<RegistrationRecord | null>(null);
@@ -75,8 +78,8 @@ export function StudentEventDetail() {
   }
   const open = event && event.status === "published" && Date.now() >= Date.parse(event.registration_opens_at) && Date.now() < Date.parse(event.registration_closes_at);
   if (loading) return <p role="status">Loading event…</p>;
-  return <section className="workflow-section"><Link to="/events">Back to events</Link>{event ? <article className="workflow-panel"><span className="event-status">{event.status}</span><h1>{event.title}</h1><p className="event-description">{event.description}</p><dl className="event-facts"><dt>When</dt><dd>{date(event.starts_at)} – {date(event.ends_at)}</dd><dt>Venue</dt><dd>{event.venue}</dd><dt>Registration</dt><dd>{date(event.registration_opens_at)} – {date(event.registration_closes_at)}</dd><dt>Capacity</dt><dd>{event.capacity ?? "No capacity limit"}</dd></dl>
-    {registration ? <p role="status">You are registered for this event.</p> : <><p>{!profile ? <>Complete your <Link to="/profile">student profile</Link> before registering.</> : profile.verification_status !== "verified" ? "University verification is required before you can register. Verification policy is pending." : open ? "Registration is open. Availability is confirmed when you register." : "Registration is not open for this event."}</p><Button disabled={busy || !open || !profile || profile.verification_status !== "verified"} onClick={() => void register()}>{busy ? "Registering…" : "Register for event"}</Button></>}
+  return <section className="workflow-section"><Link href="/events">Back to events</Link>{event ? <article className="workflow-panel"><span className="event-status">{event.status}</span><h1>{event.title}</h1><p className="event-description">{event.description}</p><dl className="event-facts"><dt>When</dt><dd>{date(event.starts_at)} – {date(event.ends_at)}</dd><dt>Venue</dt><dd>{event.venue}</dd><dt>Registration</dt><dd>{date(event.registration_opens_at)} – {date(event.registration_closes_at)}</dd><dt>Capacity</dt><dd>{event.capacity ?? "No capacity limit"}</dd></dl>
+    {registration ? <p role="status">You are registered for this event.</p> : <><p>{!profile ? <>Complete your <Link href="/profile">student profile</Link> before registering.</> : profile.verification_status !== "verified" ? "University verification is required before you can register. Verification policy is pending." : open ? "Registration is open. Availability is confirmed when you register." : "Registration is not open for this event."}</p><Button disabled={busy || !open || !profile || profile.verification_status !== "verified"} onClick={() => void register()}>{busy ? "Registering…" : "Register for event"}</Button></>}
     {message && <p role="status">{message}</p>}</article> : !error ? <h1>Event unavailable</h1> : null}
     {error && <p role="alert">{error}</p>}<Button variant="outline" onClick={() => setVersion((value) => value + 1)}>Refresh event</Button>
   </section>;

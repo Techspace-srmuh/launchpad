@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 5174 --strictPort",
-    "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit",
-    "preview": "vite preview --host 127.0.0.1 --port 4174 --strictPort"
+    "dev": "next dev --hostname 127.0.0.1 --port 5174",
+    "build": "next build",
+    "typecheck": "next typegen && tsc --noEmit",
+    "start": "next start --hostname 127.0.0.1 --port 5174"
   },
   "dependencies": {
     "@launchpad/supabase": "*",
@@ -15,7 +15,7 @@
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.0.0"
+    "next": "^16.4.6"
   },
   "devDependencies": {}
 }

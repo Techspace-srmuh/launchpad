@@ -10,8 +10,8 @@ interface Fixture {
 const fixture = JSON.parse(process.env.LAUNCHPAD_LIVE_FIXTURE ?? "null") as Fixture | null;
 if (!fixture) throw new Error("Run live tests through npm run test:live to create and clean up test accounts.");
 const { accounts, eventTitle } = fixture;
-const url = process.env.VITE_MAIN_SUPABASE_URL!;
-const key = process.env.VITE_MAIN_SUPABASE_PUBLISHABLE_KEY!;
+const url = process.env.NEXT_PUBLIC_MAIN_SUPABASE_URL!;
+const key = process.env.NEXT_PUBLIC_MAIN_SUPABASE_PUBLISHABLE_KEY!;
 const studentOrigin = "http://127.0.0.1:5183";
 const adminOrigin = "http://127.0.0.1:5184";
 
@@ -115,7 +115,7 @@ test("real admin publishes, student registers, and unauthorized direct requests 
       await login(otherPage, studentOrigin, accounts.other);
       await otherPage.goto(`${studentOrigin}/events/${event.id}`);
       await otherPage.getByRole("button", { name: "Register for event", exact: true }).click();
-      await expect(otherPage.getByRole("alert")).toContainText("This event has reached its capacity.");
+      await expect(otherPage.getByRole("main").getByRole("alert")).toContainText("This event has reached its capacity.");
       await login(otherPage, adminOrigin, accounts.other);
       await otherPage.goto(`${adminOrigin}/events`);
       await expect(otherPage.getByRole("heading", { name: "Admin access required", exact: true })).toBeVisible();

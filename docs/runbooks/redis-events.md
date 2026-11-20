@@ -80,7 +80,7 @@ These commands upload secrets from the local file without putting their values i
 In each app's `.env.local`, keep the existing MAIN project URL and publishable key and set:
 
 ```dotenv
-VITE_MAIN_EVENTS_CACHE_ENABLED=true
+NEXT_PUBLIC_MAIN_EVENTS_CACHE_ENABLED=true
 ```
 
 Restart the development servers, or rebuild/redeploy the two frontends for production. Leave this unset or `false` to read through the regular RLS-protected Supabase API. An enabled frontend calls the deployed function; the function can still operate without Redis and will report the cache as disabled.

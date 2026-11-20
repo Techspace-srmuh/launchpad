@@ -39,9 +39,9 @@ The specification chooses or proposes the following technology. Provider details
 
 | Area | Chosen or proposed approach |
 |---|---|
-| Frontend | React, TypeScript, Vite |
+| Frontend | Next.js App Router, React, TypeScript |
 | UI | Tailwind CSS and shadcn/ui |
-| Hosting | Two separate Cloudflare Pages deployments |
+| Hosting | Two separate Next.js deployments; Vercel configuration included |
 | Identity and main data | Supabase Project 1: Auth, PostgreSQL, and row-level security |
 | Protected operations | Authenticated Edge Functions or protected PostgreSQL RPCs |
 | Certificate files | Private Supabase Storage in Project 2, accessed by a protected server-side service |
@@ -94,30 +94,32 @@ npm run dev:admin
 
 | App | Local URL | Production build | Build output |
 |---|---|---|---|
-| Launchpad | `http://127.0.0.1:5173` | `npm run build:student` | `apps/student/dist` |
-| Launchpad Control | `http://127.0.0.1:5174` | `npm run build:admin` | `apps/admin/dist` |
+| Launchpad | `http://127.0.0.1:5173` | `npm run build:student` | `apps/student/.next` |
+| Launchpad Control | `http://127.0.0.1:5174` | `npm run build:admin` | `apps/admin/.next` |
+
+Both apps use Next.js 16 App Router with file-based routes, shared workspace packages and Tailwind PostCSS. After building, `npm run start:student` and `npm run start:admin` run production servers on the same ports. The `.next` folders need a Next.js runtime. For Vercel, import this repository twice with roots `apps/student` and `apps/admin`; see the [deployment guide](docs/runbooks/frontend-deployment.md). No Vercel project or deployment has been created.
 
 The app shells run without Supabase credentials and explain missing configuration on their setup pages; event workflows require MAIN configuration and migrations. Copy each app's `.env.example` to `.env.local` in that same app directory, fill in the public values, and restart the dev server:
 
 | Variable | Value |
 |---|---|
-| `VITE_MAIN_SUPABASE_URL` | Project 1 HTTPS URL; local HTTP is accepted only for localhost/127.0.0.1 |
-| `VITE_MAIN_SUPABASE_PUBLISHABLE_KEY` | Project 1 browser publishable key beginning with `sb_publishable_` |
-| `VITE_MAIN_EVENTS_CACHE_ENABLED` | Optional `true` to use the deployed authenticated event-read function. Default `false` reads directly through Supabase RLS; it does not configure Redis credentials. |
+| `NEXT_PUBLIC_MAIN_SUPABASE_URL` | Project 1 HTTPS URL; local HTTP is accepted only for localhost/127.0.0.1 |
+| `NEXT_PUBLIC_MAIN_SUPABASE_PUBLISHABLE_KEY` | Project 1 browser publishable key beginning with `sb_publishable_` |
+| `NEXT_PUBLIC_MAIN_EVENTS_CACHE_ENABLED` | Optional `true` to use the deployed authenticated event-read function. Default `false` reads directly through Supabase RLS; it does not configure Redis credentials. |
 
-Use the same Project 1 in both apps. Legacy JWT browser keys are not supported by this configuration validator. Never put service-role keys, `sb_secret_` keys, Redis tokens, email credentials or Project 2 secrets in any `VITE_` variable. A valid configuration message confirms syntax only; real requests can still fail and show an error.
+Use the same Project 1 in both apps. Legacy JWT browser keys are not supported by this configuration validator. Never put service-role keys, `sb_secret_` keys, Redis tokens, email credentials or Project 2 secrets in any `NEXT_PUBLIC_` variable. A valid configuration message confirms syntax only; real requests can still fail and show an error.
 
 ### Which Supabase project goes where?
 
 | Environment file | Project | Fields and purpose |
 |---|---|---|
-| `apps/student/.env.local` and `apps/admin/.env.local` | **MAIN — Project 1** | `VITE_MAIN_SUPABASE_URL`: main project URL. `VITE_MAIN_SUPABASE_PUBLISHABLE_KEY`: main project's public browser key. Use identical values in both apps. |
+| `apps/student/.env.local` and `apps/admin/.env.local` | **MAIN — Project 1** | `NEXT_PUBLIC_MAIN_SUPABASE_URL`: main project URL. `NEXT_PUBLIC_MAIN_SUPABASE_PUBLISHABLE_KEY`: main project's public browser key. Use identical values in both apps. |
 | `supabase/main/.env.local` | **MAIN backend only** | Optional Redis REST URL/token, cache TTL and allowed frontend origins. Copy from `.env.example` only when configuring the function; frontend builds never load these secrets. |
 | `supabase/certificates/.env.local` | **CERTIFICATES — Project 2** | Future server-only `CERTIFICATES_SUPABASE_URL` and `CERTIFICATES_SUPABASE_SECRET_KEY` for private templates/PDFs. Leave blank until Release 2. |
 
 The certificate file is a planning template, not loaded by either frontend or an implemented backend. Its privileged key will belong in the protected backend environment when certificate operations are built. Project 1 holds login, operational records and permanent certificate metadata; Project 2 holds certificate files. Local environment files are ignored by Git; committed examples contain no credentials.
 
-The `MAIN` field names replace the earlier `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` names. Update older local files to the new names and restart the dev servers. Browser publishable keys cannot apply database migrations; migration access uses the separately authenticated Supabase CLI.
+The Next.js migration renames `VITE_MAIN_*` fields to `NEXT_PUBLIC_MAIN_*`. Update older local files and hosted build variables, then restart development or rebuild production. Public variables are embedded at build time. Browser publishable keys cannot apply database migrations; migration access uses the separately authenticated Supabase CLI.
 
 The two Supabase CLI working directories are initialized and linked separately. MAIN has the identity/event migrations; CERTIFICATES has no product migrations. See the [Supabase setup runbook](docs/runbooks/supabase-setup.md) and [database/event runbook](docs/runbooks/database-events.md) for explicit target commands, verification and development account setup.
 
@@ -127,9 +129,10 @@ The two Supabase CLI working directories are initialized and linked separately. 
 npm run check
 npx playwright install chromium
 npm run test:e2e
+npm run test:production
 ```
 
-`check` runs frontend/backend TypeScript checks, ESLint, unit tests and both production builds. Browser smoke tests start both dev servers and exercise foundation navigation on desktop and mobile layouts. Unit tests cover configuration and Redis hit/miss/invalidation/outage/auth behavior with simulated services. CI runs these checks on pull requests and pushes.
+`check` runs frontend/backend TypeScript checks, ESLint, unit tests and both production builds. Browser smoke tests exercise navigation and direct routes on desktop/mobile layouts. `test:production` starts the built apps on ports 5193/5194 and checks dynamic routes, HTTP 404 and the absence of development password login; run it after `check` or `build`. Unit tests cover configuration and Redis hit/miss/invalidation/outage/auth behavior with simulated services. CI runs these checks on pull requests and pushes.
 
 With the Supabase CLI authenticated to the explicitly linked MAIN development project, run the real database and browser workflows separately:
 
@@ -141,7 +144,7 @@ npm run test:live
 
 The SQL suite rolls back its fixtures. Concurrency and live browser tests create synthetic accounts/events and remove them afterward; they require development-project access, email/password test login and the MAIN migration. The browser harness also checks the deployed `events-read` function, uses dedicated local test ports 5183/5184 and disables traces/screenshots containing account credentials. These remote checks are not run automatically in credential-free CI. See the runbooks for cleanup and prerequisites.
 
-Use `npm run build` to build both apps. Separate static deployment settings and secret boundaries are documented in the [frontend deployment runbook](docs/runbooks/frontend-deployment.md). No app has been deployed by this setup.
+Use `npm run build` to build both apps. Separate Next.js/Vercel deployment settings and secret boundaries are documented in the [frontend deployment runbook](docs/runbooks/frontend-deployment.md). No app has been deployed by this setup.
 
 ## Open decisions
 
@@ -159,6 +162,7 @@ See the specification for suggested defaults and the point at which each decisio
 - [Folder architecture](docs/architecture.md)
 - [Phased delivery workflow](phase.md)
 - [Phase 1 implementation decisions](docs/decisions/001-phase-1-foundations.md)
+- [Next.js migration decision](docs/decisions/004-nextjs-migration.md)
 - [Frontend deployment runbook](docs/runbooks/frontend-deployment.md)
 - [Supabase setup](docs/runbooks/supabase-setup.md)
 - [Database and event workflows](docs/runbooks/database-events.md)

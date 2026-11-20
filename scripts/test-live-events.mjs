@@ -8,7 +8,7 @@ const run = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
 const env = parseEnv(await readFile(join(root, "apps/student/.env.local"), "utf8"));
 const projectRef = (await readFile(join(root, "supabase/main/supabase/.temp/project-ref"), "utf8")).trim();
-if (projectRef !== "amagfwugfinplxhkauig" || new URL(env.VITE_MAIN_SUPABASE_URL).hostname !== `${projectRef}.supabase.co`) {
+if (projectRef !== "amagfwugfinplxhkauig" || new URL(env.NEXT_PUBLIC_MAIN_SUPABASE_URL).hostname !== `${projectRef}.supabase.co`) {
   throw new Error("Live tests require the explicitly linked Launchpad MAIN project and matching browser configuration.");
 }
 
