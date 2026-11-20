@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isProfileComplete, type ProfileRecord } from "./workflows";
+import { isProfileComplete, workflowError, type ProfileRecord } from "./workflows";
 
 const complete: ProfileRecord = {
   user_id: "student-id",
@@ -33,5 +33,18 @@ describe("student profile eligibility hint", () => {
     { roll_number: "bad/roll" },
   ])("keeps incomplete or invalid details in onboarding: %j", (fields) => {
     expect(isProfileComplete({ ...complete, ...fields })).toBe(false);
+  });
+});
+
+describe("workflow error mapping", () => {
+  it.each([
+    ["ALREADY_CHECKED_IN", "This student is already checked in for this event."],
+    ["WRONG_EVENT", "This QR code belongs to a different event."],
+    ["OUTSIDE_CHECK_IN_WINDOW", "Check-in is only available while the event is actively running."],
+    ["INVALID_QR", "Invalid QR code format. Please present a valid event QR code."],
+    ["CORRECTION_REASON_REQUIRED", "A reason between 3 and 500 characters is required for attendance correction."],
+    ["EVENT_REQUIRED_FOR_AUDIENCE", "Please select an event when targeting event registrants."],
+  ])("maps %s code to helpful human text", (code, expected) => {
+    expect(workflowError(new Error(`PGRST116: ${code}`))).toBe(expected);
   });
 });

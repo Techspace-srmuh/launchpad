@@ -48,6 +48,50 @@ export interface RegistrationRecord {
   created_at: string;
 }
 
+export interface AttendanceRecord {
+  id: string;
+  event_id: string;
+  registration_id: string;
+  user_id: string;
+  checked_in: boolean;
+  checked_by: string;
+  checked_at: string;
+  correction_reason: string | null;
+  corrected_by: string | null;
+  corrected_at: string | null;
+}
+
+export interface AdminAttendanceItem {
+  attendance_id: string;
+  registration_id: string;
+  user_id: string;
+  checked_in: boolean;
+  checked_at: string;
+  checked_by: string;
+  correction_reason: string | null;
+  corrected_at: string | null;
+}
+
+export interface AnnouncementRecord {
+  id: string;
+  event_id: string | null;
+  title: string;
+  body: string;
+  link: string | null;
+  audience: "all_students" | "event_registrants";
+  published_by: string;
+  published_at: string;
+  created_at: string;
+}
+
+export interface QrCredentialRecord {
+  id: string;
+  registration_id: string;
+  event_id: string;
+  token: string;
+  created_at: string;
+}
+
 const messages: Record<string, string> = {
   PROFILE_REQUIRED: "Complete your student profile before registering.",
   PROFILE_DETAILS_REQUIRED: "Complete all student details before registering for events.",
@@ -68,6 +112,18 @@ const messages: Record<string, string> = {
   SELF_REVOKE_NOT_ALLOWED: "Ask another admin to remove your access. You cannot revoke your own admin access.",
   INVALID_ADMIN_EMAIL: "Enter a valid email address for this admin account.",
   ADMIN_REASON_REQUIRED: "Enter a reason for this access change.",
+  ATTENDANCE_CORRECTION_REQUIRED: "Attendance was manually corrected. Use an audited correction to restore it.",
+  INVALID_ATTENDANCE_STATUS: "Choose present or absent for the correction.",
+  NOT_REGISTERED: "You must be registered for this event to view attendance credentials.",
+  INVALID_QR: "Invalid QR code format. Please present a valid event QR code.",
+  QR_NOT_FOUND: "QR code not recognized or no registration found.",
+  WRONG_EVENT: "This QR code belongs to a different event.",
+  OUTSIDE_CHECK_IN_WINDOW: "Check-in is only available while the event is actively running.",
+  ALREADY_CHECKED_IN: "This student is already checked in for this event.",
+  CORRECTION_REASON_REQUIRED: "A reason between 3 and 500 characters is required for attendance correction.",
+  ATTENDANCE_NOT_FOUND: "Attendance record not found.",
+  EVENT_REQUIRED_FOR_AUDIENCE: "Please select an event when targeting event registrants.",
+  INVALID_AUDIENCE: "Audience must be either all students or event registrants.",
 };
 
 export function workflowError(error: unknown): string {

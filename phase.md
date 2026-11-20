@@ -12,7 +12,7 @@ This workflow implements [the source-of-truth specification](TechSpace_Launchpad
 | 1 | Runnable workspace and two app shells | 0 for affected decisions | Foundation | Complete: validated 20 November 2026 |
 | 2 | Shared identity, student profiles and protected admin access | 1 | 1 | Onboarding/admin policy implemented; Google enabled and user reports working login; full release validation pending |
 | 3 | Event publishing and atomic registration | 2 | 1 | Development workflow verified; release depends on Phase 2/policy |
-| 4 | Secure event QR attendance | 3 | 1 | Pending |
+| 4 | Secure event QR attendance | 3 | 1 | QR attendance and audited corrections implemented & development-verified; physical mobile device validation pending |
 | 5 | Targeted announcements, OD links and queued email | 3; email decisions | 1 | Dashboard notices/OD links implemented; email delivery pending |
 | 6 | Event materials and usable dashboards | 3-5 | 1 | Gallery/resource links and participant export development-verified; dashboard summaries and release checks pending |
 | 7 | Verified mobile workflows and operational recovery | 2-6 | 1 launch gate | Pending |
@@ -140,6 +140,29 @@ Phase 5 can proceed alongside Phase 4 after registration is stable. Phases 8 and
 **Deliverable:** real check-in visible in student and admin records.
 
 **Exit:** AT-05 and AT-06 pass; camera workflow is exercised on supported mobile devices.
+
+### QR attendance implementation and validation record - 20 November 2026
+
+- Applied MAIN migrations `20261120050000_attendance.sql`, `20261120051000_attendance_hmac_fix.sql` and review hardening migration `20261120080000_attendance_hardening.sql`.
+- Added tables `public.qr_credentials` and `public.attendance` with row-level security enabled and direct table mutations revoked from all browser roles.
+- Implemented security-definer RPCs:
+  - `generate_qr_credential(uuid)`: generates/retrieves an idempotent 64-char HMAC-SHA256 hex token tied to registration and event; roll numbers and student details are never embedded in the QR payload.
+  - `validate_check_in(text, uuid)`: serializes with admin access changes and rechecks current authority, verifies token/registration and published event, validates active check-in window (`now() between starts_at and ends_at`), serializes concurrent scans on the credential row, prevents duplicate check-in, and records an audit log.
+  - `admin_correct_attendance(uuid, boolean, text)`: audited admin correction with mandatory 3-500 character reason and actor tracking.
+  - `admin_list_attendance(uuid, integer)`: paginated attendance check-in list for authorized admins.
+- Added Next.js server route `/api/qr/[eventId]` in Launchpad (student app) to stream server-generated QR PNG images authenticated via Bearer token, with private no-store responses. The UI holds an image URL; the credential remains readable by its authorized owner and scanner, and must not be logged or shared.
+- Added student event detail QR view and refreshable attendance status badge (`StudentEventQr`).
+- Added admin mobile scanner (`AttendanceScanner`) using the browser's `BarcodeDetector` API with pure-JS `jsQR` canvas fallback, along with manual attendance correction form and paginated check-in history identifying students by name/registration number.
+- Added `/events/[eventId]/attendance` route in Launchpad Control and linked it from event management cards.
+- Automated verification:
+  - `npm run check`: **passed** (typecheck, lint, 60 Vitest unit tests, and production builds for both apps).
+  - `npm run test:e2e`: **8/8 passed** across desktop and mobile viewports.
+  - `npm run test:production`: **4/4 passed** against production builds.
+  - MAIN rollback SQL suite (`supabase/tests/attendance.sql`): **39/39 checks passed**, covering RLS isolation, student QR generation, non-admin RPC denial, unknown/wrong-event scan rejection, outside-window check-in rejection, duplicate check-in rejection, audited correction with mandatory reason, and cross-student QR and attendance isolation.
+  - Simultaneous HTTP concurrency suite (`concurrency.py`): **5/5 race scenarios passed**, including the new simultaneous QR check-in race where two admin workers scanned the exact same QR credential concurrently; exactly one scan recorded check-in and the second was rejected with `ALREADY_CHECKED_IN`.
+  - Live browser/API verification: announcements and events passed in the full `npm run test:live` suite. The targeted `npm run test:live -- tests/live/attendance.spec.ts` follow-up passed **1/1** after correcting an audit assertion race and aligning linked-database waits to 15 seconds. It used a real QR PNG in a synthetic canvas video stream, decoded by the actual jsQR fallback, then the real check-in RPC. Preview survived refresh, stop ended the camera track, the student status refreshed, correction saved and its event/actor-scoped audit was verified. Synthetic fixtures were cleaned after each run. All three live scenarios therefore passed across the full and targeted runs.
+- Review fixes: preserve camera/video attachment during data refresh; cancel pending camera starts and in-flight decode loops after stop/navigation; clean up interrupted QR image requests; show student identity and paginate past 100 attendance records; require an audited correction to restore a previously corrected absence; record previous/new correction status. The concurrency fixture now chooses the still-authorized scanner after its cross-admin revocation race.
+- **Remaining limitations:** automated tests use software-decoded QR tokens and simulated browser cameras; physical camera scanning on actual iOS and Android devices remains a release check (AT-15). Check-in window uses event start and end times; any additional grace-period policy remains an open decision. Offline scanning is excluded by specification.
 
 ## Phase 5 - Announcements, OD and email
 

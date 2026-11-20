@@ -21,20 +21,24 @@ const accounts = Object.fromEntries(["admin", "student", "other", "unverified"].
 const fixture = { accounts, eventTitle: `Launchpad integration ${runId}`, eventId: randomUUID() };
 await mkdir(join(root, ".supabase"), { recursive: true });
 const directory = await mkdtemp(join(root, ".supabase", "live-test-"));
+await writeFile(join(directory, "recovery.json"), JSON.stringify({ runId, userIds: Object.values(accounts).map(({ id }) => id), fixtureAdminId: accounts.admin.id }), { mode: 0o600 });
 async function query(sql, label) {
   const file = join(directory, `${label}.sql`);
   await writeFile(file, sql, { mode: 0o600 });
+  let succeeded = false;
   try {
     await run("supabase", ["db", "query", "--linked", "--workdir", "supabase/main", "--file", file], { cwd: root, maxBuffer: 1024 * 1024 });
+    succeeded = true;
   } catch {
     // Query failures can echo SQL. Keep fixture passwords and JWTs out of logs.
     throw new Error(`${label} failed; credentials and SQL output withheld.`);
   } finally {
-    await rm(file, { force: true });
+    if (label !== "cleanup" || succeeded) await rm(file, { force: true });
   }
 }
 
 let failed = false;
+let cleanupSucceeded = false;
 try {
   await query(`begin;
 ${Object.entries(accounts).map(([role, account], index) => `
@@ -49,7 +53,7 @@ commit;`, "seed");
   console.log("Temporary live test accounts created. Running real browser and API workflows.");
   const childEnv = { ...process.env, ...env, LAUNCHPAD_LIVE_FIXTURE: JSON.stringify(fixture) };
   try {
-    const result = await run(process.execPath, [join(root, "node_modules/@playwright/test/cli.js"), "test", "--config", "playwright.live.config.ts"], {
+    const result = await run(process.execPath, [join(root, "node_modules/@playwright/test/cli.js"), "test", "--config", "playwright.live.config.ts", ...process.argv.slice(2)], {
       cwd: root, env: childEnv, maxBuffer: 4 * 1024 * 1024,
     });
     console.log(result.stdout.replaceAll(password, "[redacted]"));
@@ -61,6 +65,8 @@ commit;`, "seed");
   try {
     // Remove only notices/events published or created by this run's fixture admin.
     await query(`begin;
+delete from public.attendance where checked_by='${accounts.admin.id}' or user_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
+delete from public.qr_credentials where registration_id in (select id from public.registrations where user_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")}));
 delete from public.audit_logs where entity_id in (select id from public.announcements where published_by='${accounts.admin.id}');
 delete from public.announcements where published_by='${accounts.admin.id}';
 delete from public.registrations where user_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
@@ -72,15 +78,16 @@ delete from public.profiles where user_id in (${Object.values(accounts).map(({ i
 delete from public.audit_logs where actor_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")}) or entity_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
 delete from auth.users where id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
 commit;`, "cleanup");
+    cleanupSucceeded = true;
     console.log("Temporary live test accounts, announcements and event data removed.");
   } catch (error) {
     console.error(error.message);
-    console.error(`Cleanup required for test namespace ${runId}; no unrelated records are targeted.`);
+    console.error(`Cleanup required for test namespace ${runId}; recovery identifiers and credential-free cleanup SQL retained in ${directory}.`);
     failed = true;
   }
-  if (directory.startsWith(join(root, ".supabase", "live-test-"))) {
+  if (cleanupSucceeded && directory.startsWith(join(root, ".supabase", "live-test-"))) {
     await rm(directory, { recursive: true, force: true });
-  } else {
+  } else if (cleanupSucceeded) {
     console.error("Unexpected cleanup directory; removal skipped.");
     failed = true;
   }

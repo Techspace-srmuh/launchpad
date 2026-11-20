@@ -6,6 +6,8 @@ import { useParams } from "next/navigation";
 import { Button } from "@launchpad/ui";
 import { isProfileComplete, readEvents, useIdentity, workflowError, type EventRecord, type RegistrationRecord } from "@launchpad/supabase";
 
+import { StudentEventQr } from "./attendance";
+
 const cacheEnabled = process.env.NEXT_PUBLIC_MAIN_EVENTS_CACHE_ENABLED === "true";
 const date = (value: string) => new Date(value).toLocaleString();
 
@@ -79,7 +81,12 @@ export function StudentEventDetail() {
   const open = event && event.status === "published" && Date.now() >= Date.parse(event.registration_opens_at) && Date.now() < Date.parse(event.registration_closes_at);
   if (loading) return <p role="status">Loading event…</p>;
   return <section className="workflow-section"><Link href="/events">Back to events</Link>{event ? <article className="workflow-panel"><span className="event-status">{event.status}</span><h1>{event.title}</h1><p><Link href={`/events/${event.id}/materials`}>Gallery & resources</Link></p><p className="event-description">{event.description}</p><dl className="event-facts"><dt>When</dt><dd>{date(event.starts_at)} – {date(event.ends_at)}</dd><dt>Venue</dt><dd>{event.venue}</dd><dt>Registration</dt><dd>{date(event.registration_opens_at)} – {date(event.registration_closes_at)}</dd><dt>Capacity</dt><dd>{event.capacity ?? "No capacity limit"}</dd></dl>
-    {registration ? <p role="status">You are registered for this event.</p> : <><p>{!isProfileComplete(profile) ? <>Complete your <Link href="/profile">student profile</Link> before registering.</> : open ? "Registration is open. Availability is confirmed when you register." : "Registration is not open for this event."}</p><Button disabled={busy || !open || !isProfileComplete(profile)} onClick={() => void register()}>{busy ? "Registering…" : "Register for event"}</Button></>}
+    {registration ? (
+      <>
+        <p role="status">You are registered for this event.</p>
+        <StudentEventQr eventId={event.id} />
+      </>
+    ) : <><p>{!isProfileComplete(profile) ? <>Complete your <Link href="/profile">student profile</Link> before registering.</> : open ? "Registration is open. Availability is confirmed when you register." : "Registration is not open for this event."}</p><Button disabled={busy || !open || !isProfileComplete(profile)} onClick={() => void register()}>{busy ? "Registering…" : "Register for event"}</Button></>}
     {message && <p role="status">{message}</p>}</article> : !error ? <h1>Event unavailable</h1> : null}
     {error && <p role="alert">{error}</p>}<Button variant="outline" onClick={() => setVersion((value) => value + 1)}>Refresh event</Button>
   </section>;

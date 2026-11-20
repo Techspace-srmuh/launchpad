@@ -1,6 +1,6 @@
 # MAIN database and event workflow
 
-The MAIN project is `amagfwugfinplxhkauig`. The certificate project remains separate and receives none of these migrations. The overall product specification is still a draft. The user has approved immediate student eligibility after complete onboarding and protected admin-managed access; Google provider activation and real Google login validation remain pending. See [decision 005](../decisions/005-student-onboarding-admin-access.md). This work does not establish production readiness.
+The MAIN project is `amagfwugfinplxhkauig`. The certificate project remains separate and receives none of these migrations. The overall product specification is still a draft. The user has approved immediate student eligibility after complete onboarding and protected admin-managed access; Google sign-in is enabled and the user reports successful login; deployed-origin and multi-account validation remain release checks. See [decision 005](../decisions/005-student-onboarding-admin-access.md). This work does not establish production readiness.
 
 ## Migration catalogue
 
@@ -9,8 +9,14 @@ The MAIN project is `amagfwugfinplxhkauig`. The certificate project remains sepa
 | `20261120010000_identity_events.sql` | Profiles, protected admin records, audit logs, events, registrations, RLS and authenticated RPCs |
 | `20261120011000_event_validation_hardening.sql` | Validate HTTPS poster hostnames, remove an unapproved event-start restriction on registration windows, restrict internal trigger-function execution |
 | `20261120020000_onboarding_admin_access.sql` | Required onboarding details, completion-based registration eligibility, protected initial Google admin authorizations and audited admin-managed access |
+| `20261120040000_dashboard_announcements.sql` | Targeted dashboard announcements, shared Google Drive OD links and publisher authority under role lock |
+| `20261120050000_attendance.sql` | Event-specific QR credentials, check-in validation with active window checks, and audited corrections |
+| `20261120051000_attendance_hmac_fix.sql` | Schema qualification for extensions.hmac in generate_qr_credential under security definer empty search_path |
+| `20261120060000_event_materials.sql` | Published event gallery/resource metadata, protected admin operations and visibility RLS |
+| `20261120070000_participant_export.sql` | Bounded filtered admin participant snapshots and audited export preparation |
+| `20261120080000_attendance_hardening.sql` | Role-change serialization, event status/registration validation and correction protection |
 
-All three migrations were applied to linked MAIN on 20 November 2026. See [phase.md](../../phase.md) for validation evidence; application alone does not establish successful security checks. Files are under `supabase/main/supabase/migrations/`; extend shared database history with new migrations rather than rewriting applied files.
+All migrations were applied to linked MAIN on 20 November 2026. See [phase.md](../../phase.md) for validation evidence; application alone does not establish successful security checks. Files are under `supabase/main/supabase/migrations/`; extend shared database history with new migrations rather than rewriting applied files.
 
 ## Data and browser access
 

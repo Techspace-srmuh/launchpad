@@ -76,10 +76,10 @@ def http(path, body, token=None):
     except urllib.error.HTTPError as error:
         details = json.loads(error.read())
         message = details.get('message', '')
-        for expected in ['EVENT_FULL', 'ALREADY_REGISTERED', 'CAPACITY_BELOW_REGISTRATIONS', 'ADMIN_REQUIRED']:
+        for expected in ['EVENT_FULL', 'ALREADY_REGISTERED', 'CAPACITY_BELOW_REGISTRATIONS', 'ADMIN_REQUIRED', 'ALREADY_CHECKED_IN']:
             if expected in message:
                 return {'error': expected}
-        raise RuntimeError('Unexpected authenticated HTTP request failure; response withheld.') from None
+        raise RuntimeError(f'Unexpected authenticated HTTP request failure: {message}') from None
 
 
 def parallel(statements):
@@ -165,8 +165,36 @@ try:
     remaining = query(f"select count(*)::integer as active from public.admin_users where active and user_id in ('{admin}','{users[0]}');")['rows'][0]
     assert remaining['active'] == 1, 'Concurrent revocations removed all admins'
     print('PASS: simultaneous cross-admin revocations left one active admin; revoked caller was denied.', flush=True)
+    scanner_id = query(f"select user_id from public.admin_users where active and user_id in ('{admin}','{users[0]}');")['rows'][0]['user_id']
+    # Simultaneous QR scan race: two admin requests scan the same student QR credential concurrently.
+    # Exactly one scan must succeed; the duplicate scan must return ALREADY_CHECKED_IN.
+    now = datetime.now(timezone.utc)
+    qr_event = str(uuid.uuid4())
+    events.append(qr_event)
+    event_list += f",'{qr_event}'::uuid"
+    setup_qr = (
+        f"insert into public.events(id,title,description,starts_at,ends_at,venue,registration_opens_at,registration_closes_at,capacity,status,created_by) "
+        f"values ('{qr_event}','QR Race Event','Synthetic QR scan event',now()-interval '1 hour',now()+interval '1 hour','Lab',now()-interval '2 hours',now()+interval '30 minutes',10,'published','{admin}'); "
+        f"insert into public.registrations(event_id,user_id) values ('{qr_event}','{users[1]}'); "
+    )
+    query(f"begin; {setup_qr} commit; select true;")
+    # Student generates QR
+    token_resp = http('/rest/v1/rpc/generate_qr_credential', {'p_event_id': qr_event}, tokens[users[1]])
+    qr_token = token_resp['rows']
+
+    scan_rpc = '/rest/v1/rpc/validate_check_in'
+    results = parallel([
+        (scan_rpc, {'p_token': qr_token, 'p_event_id': qr_event}, tokens[scanner_id]),
+        (scan_rpc, {'p_token': qr_token, 'p_event_id': qr_event}, tokens[scanner_id]),
+    ])
+    assert sum('rows' in result and result['rows'] is not None for result in results) == 1, "Expected exactly 1 successful scan in race"
+    assert sum(result.get('error') == 'ALREADY_CHECKED_IN' for result in results) == 1, "Expected duplicate scan to be rejected"
+    print("PASS: simultaneous QR scans -> exactly one check-in recorded, one ALREADY_CHECKED_IN response.", flush=True)
 finally:
     query("begin; "
+          f"delete from public.attendance where event_id in ({event_list}); "
+          f"delete from public.qr_credentials where event_id in ({event_list}); "
+          f"delete from public.announcements where event_id in ({event_list}) or published_by in ({user_list}); "
           f"delete from public.registrations where event_id in ({event_list}); "
           f"delete from public.events where id in ({event_list}); "
           f"delete from public.admin_email_access where user_id in ({user_list}); "

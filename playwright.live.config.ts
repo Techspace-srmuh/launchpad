@@ -7,6 +7,7 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   timeout: 180_000,
+  expect: { timeout: 15_000 },
   reporter: "list",
   use: { browserName: "chromium", actionTimeout: 15_000, navigationTimeout: 20_000, trace: "off", screenshot: "off", video: "off" },
   webServer: [

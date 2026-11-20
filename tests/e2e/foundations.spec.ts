@@ -45,7 +45,7 @@ for (const surface of surfaces) {
     const eventId = "00000000-0000-4000-8000-000000000001";
     const routes = surface.name === "student"
       ? [`/events/${eventId}/materials`, "/announcements", "/events", `/events/${eventId}`, "/my-events", "/profile"]
-      : [`/events/${eventId}/materials`, `/events/${eventId}/export`, "/announcements", "/admins", "/events", "/events/new", `/events/${eventId}/edit`, `/events/${eventId}/participants`, "/profile"];
+      : [`/events/${eventId}/materials`, `/events/${eventId}/export`, "/announcements", "/admins", "/events", "/events/new", `/events/${eventId}/attendance`, `/events/${eventId}/edit`, `/events/${eventId}/participants`, "/profile"];
     for (const route of routes) {
       const response = await page.goto(`${surface.origin}${route}`);
       expect(response?.status(), route).toBe(200);
