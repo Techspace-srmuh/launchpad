@@ -195,6 +195,8 @@ flowchart LR
 - **Resources:** Admin attaches labeled Google Drive or approved external URLs to an event. Student clicks links from event detail. Only labels, visibility, order and URLs are stored in the main DB.
 - **Privacy:** Validate URLs and sharing permissions; **anyone-with-link** albums/Drive files can be forwarded. For sensitive materials use institution-approved restricted sharing. Do not promise app-level access control over files once externally shared.
 
+**Implementation increment, 20 November 2026:** the user requested event galleries/resources and participant CSV export. Gallery/resource metadata uses published/hidden visibility and display order; an authorized admin approves external resource destinations by adding them. Student reads follow event visibility and publication. CSV exports are admin-only, filtered and audited; contact details and QR credentials are excluded. This implements existing F06/F08 scope, not file hosting or advanced analytics.
+
 ### F07 — Event questions (Phase 2)
 - **Student:** Create a private question thread associated with an event, send text and optionally a document/approved file link.
 - **Admin:** View and reply to those threads; optionally close a resolved thread.

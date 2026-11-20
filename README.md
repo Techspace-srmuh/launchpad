@@ -29,6 +29,8 @@ These are release requirements; only the development capabilities listed below a
 - **Student:** profile creation/editing, published-event browsing/details, registration and My Events. Onboarding collects name, registration number, course, branch, department, section, academic year and mobile number. Complete details give immediate eligibility; manual approval is not required.
 - **Admin:** backend-checked event operations and participant views, plus protected access management by exact registered email with an audited reason.
 - **Database:** normalized unique immutable roll claims, private profile data, protected admin records, audit logs, RLS and transactional registration with capacity/duplicate checks. Profile completion is distinct from institutional verification.
+- **Materials:** event-specific Google Photos album and resource links, with admin editing, publication/order controls, private draft/hidden metadata and backend audit records. Files remain on their external services.
+- **Participant export:** protected event CSV download with department/year/name-or-registration filters, a ten-row preview and complete bounded snapshots. Contact information and QR credentials are excluded; downloaded text is protected against spreadsheet formulas.
 - **Announcements:** admin-published dashboard notices for all students or event registrants, with audience rules enforced by MAIN RLS. Optional event-associated HTTPS links can reference one shared signed OD PDF in Google Drive. Email delivery is pending. See the [announcements runbook](docs/runbooks/announcements.md).
 - **Redis:** optional authenticated event-read cache implementation, with fresh visibility/version checks and database fallback. The Edge Function is deployed to MAIN; Redis provisioning and real Redis connectivity remain pending. See the [Redis runbook](docs/runbooks/redis-events.md).
 
@@ -143,9 +145,12 @@ With the Supabase CLI authenticated to the explicitly linked MAIN development pr
 supabase db query --linked --workdir supabase/main --file supabase/tests/identity_events.sql
 supabase db query --linked --workdir supabase/main --file supabase/tests/onboarding_admin_access.sql
 supabase db query --linked --workdir supabase/main --file supabase/tests/announcements.sql
+supabase db query --linked --workdir supabase/main --file supabase/tests/event_materials.sql
+supabase db query --linked --workdir supabase/main --file supabase/tests/participant_export.sql
 supabase db query --linked --workdir supabase/main --file supabase/tests/onboarding_admin_access.sql
 python supabase/main/supabase/tests/concurrency.py
 npm run test:live
+npm run test:materials-export
 ```
 
 The SQL suite rolls back its fixtures. Concurrency and live browser tests create synthetic accounts/events and remove them afterward; they require development-project access, email/password test login and the MAIN migration. The browser harness also checks the deployed `events-read` function, uses dedicated local test ports 5183/5184 and disables traces/screenshots containing account credentials. These remote checks are not run automatically in credential-free CI. See the runbooks for cleanup and prerequisites.
@@ -177,3 +182,5 @@ See the specification for suggested defaults and the point at which each decisio
 - [Redis event cache](docs/runbooks/redis-events.md)
 - [Product specification and source of truth](TechSpace_Launchpad_SOURCE_OF_TRUTH.md) — draft v2.0.0, pending stakeholder approval
 
+
+Gallery/resource setup and validation are in the [event materials runbook](docs/runbooks/event-materials.md); export filters, bounds and CSV behavior are in the [participant export runbook](docs/runbooks/participant-export.md). `test:materials-export` needs both development servers running and linked MAIN migrations; set `MATERIALS_STUDENT_ORIGIN` and `MATERIALS_ADMIN_ORIGIN` when using different ports. It creates 105 synthetic participants and cleans its fixtures afterward. It does not open external Photos/Drive files.

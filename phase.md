@@ -14,7 +14,7 @@ This workflow implements [the source-of-truth specification](TechSpace_Launchpad
 | 3 | Event publishing and atomic registration | 2 | 1 | Development workflow verified; release depends on Phase 2/policy |
 | 4 | Secure event QR attendance | 3 | 1 | Pending |
 | 5 | Targeted announcements, OD links and queued email | 3; email decisions | 1 | Dashboard notices/OD links implemented; email delivery pending |
-| 6 | Event materials and usable dashboards | 3-5 | 1 | Pending |
+| 6 | Event materials and usable dashboards | 3-5 | 1 | Gallery/resource links and participant export development-verified; dashboard summaries and release checks pending |
 | 7 | Verified mobile workflows and operational recovery | 2-6 | 1 launch gate | Pending |
 | 8 | Certificate templates, issuance and private downloads | 7; certificate decisions | 2 | Pending |
 | 9 | Private event questions and replies | 7; attachment decisions | 2 | Pending |
@@ -176,6 +176,15 @@ Phase 5 can proceed alongside Phase 4 after registration is stable. Phases 8 and
 **Deliverable:** useful event materials and operational dashboards for both roles.
 
 **Exit:** AT-10 passes; counts/export reflect real records and unauthorized exports fail.
+
+### Phase 6 implementation record - 20 November 2026
+
+- Implemented admin gallery/resource create, edit, hide, order and delete, plus student event links with published/event-visibility rules. External media stays in Google Photos/Drive or another admin-approved HTTPS destination; OD links stay in announcements.
+- Implemented admin participant preview and complete filtered CSV download. Eight fields exclude contacts and QR credentials; preparation is audited. Explicit 10,000-participant/16-MiB response limits reject oversized exports instead of truncating them.
+- Applied MAIN migrations `20261120060000` and `20261120070000`. Rollback SQL suites passed **49 materials checks** and **23 export checks**, including authorization, isolation, audit behavior, more than 1,000 rows and oversized-export rejection.
+- In an isolated checkout, fresh `npm ci` and `npm run check` passed: typechecking, lint, **54 unit tests** and both Next.js production builds. Navigation checks passed **8/8**, and production-server checks passed **4/4**, including direct access gates for the new routes.
+- Final `npm run test:materials-export` passed **2/2 real browser/API workflows** against linked MAIN: material CRUD/order/hiding, student publication/draft isolation, full 105-participant CSV, filters, Unicode/quoting/formula protection and student/anonymous/revoked-admin denials. Cleanup committed and verified no fixture residue. An earlier run's cleanup failed; its exact fixture namespace was subsequently removed and verified. The harness now preserves credential-free recovery data on failure and retries only connection failures. A subsequent sign-in wait timed out while checking the account; a bounded 30-second auth wait allowed the final full run to pass.
+- Attendance work developed concurrently was excluded from this change's validated checkout and commit. Real external file permissions, deployed origins, supported spreadsheet/mobile downloads, concurrent admin revocation and dashboard summaries remain release checks. Email delivery still requires its provider/sender/worker decisions; Phase 6 and Release 1 are not declared complete.
 
 ## Phase 7 - Release 1 launch gate
 
