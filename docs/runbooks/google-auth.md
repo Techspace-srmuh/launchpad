@@ -2,7 +2,7 @@
 
 Both apps use MAIN Supabase Auth and accept personal Gmail and university Google accounts. The domain supplied by the user is `stu.srmuviversity.ac.in`; do not restrict Google sign-in to that domain. Follow [decision 005](../decisions/005-student-onboarding-admin-access.md) for complete-onboarding eligibility and admin authorization.
 
-**Current external state:** MAIN's public Auth settings reported the Google provider disabled on 20 November 2026. The app flow can be implemented and tested with synthetic identities while provider activation remains pending. A passing application build or password test does not establish a successful Google login.
+**Current external state:** MAIN's Google provider is enabled. Both local apps reached Google's real sign-in screen without configuration errors, and the user subsequently reported successful Google login on 20 November 2026. This does not independently verify every account, university login, or deployed-origin callback; use the release checks below.
 
 ## Provider configuration
 

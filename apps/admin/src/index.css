@@ -113,8 +113,8 @@ a { color: inherit; text-decoration: none; }
   .topbar { height: auto; }
   .topbar-inner { flex-wrap: wrap; padding-top: 12px; }
   .topbar-meta { display: none; }
-  .main-nav { order: 3; width: 100%; justify-content: space-between; margin: 7px 0; }
-  .nav-link { font-size: 11px; flex-direction: column; gap: 3px; padding: 7px 4px; }
+  .main-nav { order: 3; width: 100%; min-width: 0; max-width: 100%; overflow-x: auto; justify-content: flex-start; gap: 8px; margin: 7px 0; padding-bottom: 8px; }
+  .nav-link { font-size: 11px; flex-direction: column; flex-shrink: 0; white-space: nowrap; gap: 3px; padding: 7px 4px; }
   .nav-link-active::after { bottom: -7px; }
   .workflow-panel { padding: 18px; }
   .workflow-panel h1, .workflow-section h1 { font-size: 25px; }

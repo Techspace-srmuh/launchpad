@@ -2,7 +2,7 @@
 
 This workflow implements [the source-of-truth specification](TechSpace_Launchpad_SOURCE_OF_TRUTH.md), v2.0.0, which remains a draft pending stakeholder approval. The phases organize delivery; they do not approve open product decisions or expand scope. See [folder architecture](docs/architecture.md) for implementation locations.
 
-**Current state:** Phase 1 is **complete**. Both apps use Next.js App Router with separate Vercel configurations. The user has approved personal/university Google accounts, immediate eligibility after complete self-declared student onboarding, and admin-managed access. MAIN now has the onboarding/admin-access migration, in addition to identity/events and the optional event-read function. Google sign-in code is implemented, but MAIN's Google provider remains disabled and real Google login is unverified. Redis provisioning, frontend deployment and remaining Release 1 workflows are pending. The overall specification remains draft; Phase 2/3 are not declared release-complete.
+**Current state:** Phase 1 is **complete**. Both apps use Next.js App Router with separate Vercel configurations. The user has approved personal/university Google accounts, immediate eligibility after complete self-declared student onboarding, and admin-managed access. MAIN now has the onboarding/admin-access migration, in addition to identity/events and the optional event-read function. Google sign-in is enabled; automated local redirects reached Google and the user reported successful real login. Multi-account and deployed-origin checks remain release validation. Redis provisioning, frontend deployment and remaining Release 1 workflows are pending. The overall specification remains draft; Phase 2/3 are not declared release-complete.
 
 ## Phase overview
 
@@ -10,10 +10,10 @@ This workflow implements [the source-of-truth specification](TechSpace_Launchpad
 |---|---|---|---|---|
 | 0 | Confirm scope and record decisions needed to begin | Stakeholder decisions | Foundation | Pending |
 | 1 | Runnable workspace and two app shells | 0 for affected decisions | Foundation | Complete: validated 20 November 2026 |
-| 2 | Shared identity, student profiles and protected admin access | 1 | 1 | Onboarding/admin policy implemented; real Google activation/validation pending |
+| 2 | Shared identity, student profiles and protected admin access | 1 | 1 | Onboarding/admin policy implemented; Google enabled and user reports working login; full release validation pending |
 | 3 | Event publishing and atomic registration | 2 | 1 | Development workflow verified; release depends on Phase 2/policy |
 | 4 | Secure event QR attendance | 3 | 1 | Pending |
-| 5 | Targeted announcements, OD links and queued email | 3; email decisions | 1 | Pending |
+| 5 | Targeted announcements, OD links and queued email | 3; email decisions | 1 | Dashboard notices/OD links implemented; email delivery pending |
 | 6 | Event materials and usable dashboards | 3-5 | 1 | Pending |
 | 7 | Verified mobile workflows and operational recovery | 2-6 | 1 launch gate | Pending |
 | 8 | Certificate templates, issuance and private downloads | 7; certificate decisions | 2 | Pending |
@@ -152,6 +152,19 @@ Phase 5 can proceed alongside Phase 4 after registration is stable. Phases 8 and
 **Deliverable:** targeted dashboard notices and real queued email delivery within provider limits.
 
 **Exit:** AT-07-AT-09 pass, including audience isolation, retry/rate-limit failures and single-link OD sharing. Email cannot be marked complete while provider/worker/sender decisions remain unresolved.
+
+### Dashboard announcements and OD links - 20 November 2026
+
+- User-authorized incremental delivery: dashboard notices and common OD links first; email provider, sender, worker/queue delivery and retry/status checks remain pending. This does not complete all of F04 or AT-08.
+- Applied MAIN migration `20261120040000_dashboard_announcements.sql`. Admin publishing checks current backend authority under the role-change lock and commits the published notice and audit record together. Direct browser mutations are revoked; RLS limits students to global notices and events where they hold a registration. Draft/missing event associations and invalid links are rejected.
+- Added `/announcements` to both apps and navigation, admin authoring and paginated feeds, loading/empty/failure/account gates, and mobile navigation scrolling. Common signed OD uses the ordinary event-associated HTTPS link; reminders can reuse one shared Drive PDF without an OD table, generator or copies.
+- `npm run check`: **passed**, including frontend/shared/backend/tooling TypeScript, ESLint, **40 unit tests** and both production builds. `npm run test:e2e`: **8/8 passed** across desktop/mobile, including announcement-route access gates and responsive navigation.
+- `npm run test:production`: **4/4 passed**, including direct announcement-route account gates, Google configuration/cancellation handling and development-login boundaries.
+- MAIN rollback announcement suite: **34 checks passed**, covering publisher authority, audience isolation before/after registration, direct-write denial, revoked admin denial, audit records, shared OD URL reuse and HTTPS host/port/credential/whitespace/backslash validation.
+- `npm run test:live`: **2/2 real browser/API scenarios passed**. Admin published both notice audiences, the intended mobile student saw the event notice and one shared Drive link, and a different student was denied through UI and direct API reads. Invalid-link failure, anonymous/student publishing denial, direct writes, non-admin Control access and signed-out access were exercised. The existing profile/event/registration/admin grant-revoke scenario also passed. Synthetic accounts, notices and events were removed afterward.
+- External Drive URL in automated tests is synthetic and is not opened: the tests establish storage, rendering and isolation, not the content/signature or Drive sharing permissions of a real PDF. Email is not sent and no delivery success is simulated. Pagination above one page and physical-device behavior remain release checks.
+- Google status correction: MAIN was subsequently observed enabled; automated redirects reached Google's real login screen from both local apps, and the user reported successful login. This is separate from a comprehensive multi-account/university/deployed-origin verification claim.
+- QR attendance remains a separate user-managed Antigravity task. No attendance implementation or completion is claimed by this increment.
 
 ## Phase 6 - Materials and dashboards
 

@@ -178,6 +178,8 @@ flowchart LR
 - **Delivery reliability:** Publishing an announcement stores it in the DB immediately; email jobs run separately with rate limits, retries and delivery status. A failed email does not invalidate an already published dashboard announcement.
 - **Open:** choose email provider, verified sender/domain and exact retry/cadence limits. Do **not** assume free tier permits instant bulk mailing to 500 recipients.
 
+**Incremental implementation authorized by the user, 20 November 2026:** dashboard announcements and existing shared OD links are implemented first. Email provider, verified sender, queue worker, retries and delivery status remain pending. This increment does not complete all of F04 or AT-08. Notices use one ordinary optional HTTPS link; reminders may reuse the same external PDF without an OD-specific module or table.
+
 ### F05 — Certificates (Phase 2)
 - **Admin:** Upload own reusable PDF/image template; configure placement of name, event, date, certificate ID and verification QR; select eligible students; preview; confirm issuance; optionally email notification or PDF attachment if delivery constraints permit.
 - **Student:** See issued certificates attached to profile; download own PDF; access public verification URL.

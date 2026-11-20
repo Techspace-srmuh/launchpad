@@ -59,8 +59,10 @@ commit;`, "seed");
   }
 } finally {
   try {
-    // Events created through the UI retain the fixture admin as created_by.
+    // Remove only notices/events published or created by this run's fixture admin.
     await query(`begin;
+delete from public.audit_logs where entity_id in (select id from public.announcements where published_by='${accounts.admin.id}');
+delete from public.announcements where published_by='${accounts.admin.id}';
 delete from public.registrations where user_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
 delete from public.audit_logs where entity_id in (select id from public.events where created_by='${accounts.admin.id}');
 delete from public.events where created_by='${accounts.admin.id}';
@@ -70,7 +72,7 @@ delete from public.profiles where user_id in (${Object.values(accounts).map(({ i
 delete from public.audit_logs where actor_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")}) or entity_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
 delete from auth.users where id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
 commit;`, "cleanup");
-    console.log("Temporary live test accounts and event data removed.");
+    console.log("Temporary live test accounts, announcements and event data removed.");
   } catch (error) {
     console.error(error.message);
     console.error(`Cleanup required for test namespace ${runId}; no unrelated records are targeted.`);

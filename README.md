@@ -4,7 +4,7 @@
 
 TechSpace Launchpad is a planned event platform for one university club. It pairs a student experience for discovering and attending events with a separate admin experience for running them.
 
-> **Project status: Phase 1 complete; identity and event workflows implemented for development.** MAIN has profiles, audited events, atomic registration and the applied onboarding/admin-access migration. The user has selected immediate eligibility after complete onboarding and admin-managed access. Google sign-in code is present, but MAIN's Google provider is currently disabled and real Google login remains unverified. The specification remains a draft pending stakeholder approval; this is not a launch-ready release.
+> **Project status: Phase 1 complete; identity and event workflows implemented for development.** MAIN has profiles, audited events, atomic registration and the applied onboarding/admin-access migration. The user has selected immediate eligibility after complete onboarding and admin-managed access. Google sign-in is enabled; both app redirects reached Google and the user reported successful real login. Full deployed-origin verification remains a release check. The specification remains a draft pending stakeholder approval; this is not a launch-ready release.
 
 ## Product at a glance
 
@@ -29,9 +29,10 @@ These are release requirements; only the development capabilities listed below a
 - **Student:** profile creation/editing, published-event browsing/details, registration and My Events. Onboarding collects name, registration number, course, branch, department, section, academic year and mobile number. Complete details give immediate eligibility; manual approval is not required.
 - **Admin:** backend-checked event operations and participant views, plus protected access management by exact registered email with an audited reason.
 - **Database:** normalized unique immutable roll claims, private profile data, protected admin records, audit logs, RLS and transactional registration with capacity/duplicate checks. Profile completion is distinct from institutional verification.
+- **Announcements:** admin-published dashboard notices for all students or event registrants, with audience rules enforced by MAIN RLS. Optional event-associated HTTPS links can reference one shared signed OD PDF in Google Drive. Email delivery is pending. See the [announcements runbook](docs/runbooks/announcements.md).
 - **Redis:** optional authenticated event-read cache implementation, with fresh visibility/version checks and database fallback. The Edge Function is deployed to MAIN; Redis provisioning and real Redis connectivity remain pending. See the [Redis runbook](docs/runbooks/redis-events.md).
 
-The `/account` page supports Google sign-in for personal Gmail and university Google accounts. The university domain confirmed by the user is `stu.srmuviversity.ac.in`; it is not an eligibility restriction. MAIN's Google provider must be activated using the [Google setup runbook](docs/runbooks/google-auth.md) before the real flow works. Password test-account login remains development-only, uses real Supabase accounts and cannot bypass backend permissions. No demo credentials are bundled. QR attendance, announcements/email, materials, certificates and private questions remain later work.
+The `/account` page supports Google sign-in for personal Gmail and university Google accounts. The university domain confirmed by the user is `stu.srmuviversity.ac.in`; it is not an eligibility restriction. MAIN's Google provider is enabled and the user reports working login; the [Google setup runbook](docs/runbooks/google-auth.md) documents callbacks and verification for additional origins. Password test-account login remains development-only, uses real Supabase accounts and cannot bypass backend permissions. No demo credentials are bundled. Dashboard announcements and shared OD links are implemented separately from email delivery. QR attendance is being handled independently; materials, certificates and private questions remain later work.
 
 The initial authorized admin emails are `officialtechspaceclub@gmail.com` and `harutoxokura15@gmail.com`. Their backend authorizations are claimed only through matching confirmed Google identities; entering an email or changing profile metadata does not grant access. Existing admins can grant/revoke confirmed registered accounts from Control's Admin access screen. See the [policy decision](docs/decisions/005-student-onboarding-admin-access.md) for the data and security boundaries.
 
@@ -141,6 +142,7 @@ With the Supabase CLI authenticated to the explicitly linked MAIN development pr
 ```sh
 supabase db query --linked --workdir supabase/main --file supabase/tests/identity_events.sql
 supabase db query --linked --workdir supabase/main --file supabase/tests/onboarding_admin_access.sql
+supabase db query --linked --workdir supabase/main --file supabase/tests/announcements.sql
 supabase db query --linked --workdir supabase/main --file supabase/tests/onboarding_admin_access.sql
 python supabase/main/supabase/tests/concurrency.py
 npm run test:live

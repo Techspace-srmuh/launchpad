@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, ArrowUpRight, CalendarDays, CircleHelp, Compass, Orbit, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Bell, CalendarDays, CircleHelp, Compass, Orbit, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentProps } from "react";
@@ -38,7 +38,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="topbar-inner"><Brand />
           <nav className="main-nav" aria-label="Main navigation">
             <NavLink href="/" aria-label="Home" className="nav-link"><Compass size={16} />Home</NavLink>
-            <NavLink href="/events" aria-label="Events" className="nav-link"><CalendarDays size={16} />Events</NavLink><NavLink href="/my-events" aria-label="My events" className="nav-link"><Orbit size={16} />My events</NavLink><NavLink href="/profile" aria-label="Profile" className="nav-link"><Compass size={16} />Profile</NavLink><NavLink href="/account" aria-label="Account" className="nav-link"><Orbit size={16} />Account</NavLink><NavLink href="/setup" aria-label="Setup" className="nav-link"><CircleHelp size={16} />Setup</NavLink>
+            <NavLink href="/events" aria-label="Events" className="nav-link"><CalendarDays size={16} />Events</NavLink><NavLink href="/my-events" aria-label="My events" className="nav-link"><Orbit size={16} />My events</NavLink><NavLink href="/profile" aria-label="Profile" className="nav-link"><Compass size={16} />Profile</NavLink><NavLink href="/announcements" aria-label="Announcements" className="nav-link"><Bell size={16} />Announcements</NavLink><NavLink href="/account" aria-label="Account" className="nav-link"><Orbit size={16} />Account</NavLink><NavLink href="/setup" aria-label="Setup" className="nav-link"><CircleHelp size={16} />Setup</NavLink>
           </nav>
           <div className="topbar-meta"><span className="role-chip"><span />Student space</span><span className="avatar-placeholder" aria-label="Student app">S</span></div>
         </div>
