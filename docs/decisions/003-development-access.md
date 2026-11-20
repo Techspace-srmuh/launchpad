@@ -6,6 +6,8 @@
 
 The user requested simple UI and working core workflows, with external credentials added when needed. MAIN Supabase is available, so event operations use real database records and permissions. Google Console/OAuth integration is deferred.
 
+**Historical policy note:** this record describes the earlier development order. Its verified-profile eligibility gate and unresolved admin-provisioning policy are superseded by [005 — Student onboarding and admin access](005-student-onboarding-admin-access.md). Google activation remains an external setup dependency; the development-only password restriction remains in force.
+
 ## Development access
 
 Both Next.js apps expose a real Supabase email/password test-account form only when `process.env.NODE_ENV === "development"` (previously Vite's `import.meta.env.DEV`). Production bundles omit the development form. There are no hard-coded accounts, session tokens, role overrides or browser verification shortcuts. Existing authenticated sessions still require server-side authorization for every protected action.

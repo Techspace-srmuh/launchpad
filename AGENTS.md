@@ -8,7 +8,7 @@ The specification is **v2.0.0, draft pending stakeholder approval**. Use it as t
 
 ## Current repository state
 
-The repository contains two Next.js App Router apps and shared packages in an npm workspace. Phase 1 is locally validated. MAIN has identity/event migrations, RLS, audited admin operations and atomic registration; the apps expose development test-account access and event workflows. Separate Vercel deployment configurations are included; no frontend is deployed. The optional Redis event-read function is deployed to MAIN, but Redis itself is not provisioned. Google sign-in, institutional verification/admin-provisioning policy and later phases remain incomplete. See [folder architecture](docs/architecture.md), [delivery phases](phase.md) and README for setup, evidence and limits. Development verification does not establish production readiness.
+The repository contains two Next.js App Router apps and shared packages in an npm workspace. Phase 1 is locally validated. MAIN has identity/event/onboarding/admin-access migrations, RLS, audited admin operations and atomic registration. The user has approved immediate student eligibility after complete onboarding and admin-managed access; see [decision 005](docs/decisions/005-student-onboarding-admin-access.md). Google sign-in code and these workflows are implemented, but the Google provider is currently disabled in MAIN and real Google login remains unverified. Separate Vercel configurations are included; no frontend is deployed. The optional Redis function is deployed, but Redis is not provisioned. See [architecture](docs/architecture.md), [phases](phase.md) and README for evidence and limits. Development verification does not establish production readiness.
 
 Use Node.js 22.12+ on the Node 22 line for the baseline and `npm ci` from the root. Run `npm run check` for typechecking, lint, unit tests and both builds; install Chromium with `npx playwright install chromium` and run `npm run test:e2e` for navigation checks. Keep root `package-lock.json` in sync with all workspace manifests. Do not confuse a generated lockfile or source review with a successful install/build.
 
@@ -43,7 +43,8 @@ These are planned choices, not evidence of provisioned infrastructure. Do not as
 
 - Enable and test RLS on every exposed table. Students must not access other students' private records or invoke admin mutations, even through direct API calls.
 - Keep service-role keys and other secrets in server environments. Neither frontend may hold Project 2 privileged credentials.
-- Google sign-in does not prove university enrollment. Preserve unique normalized roll numbers and the selected verification policy.
+- Accept personal Gmail and university Google accounts. The user-confirmed university domain is `stu.srmuviversity.ac.in`; do not impose a university-domain sign-in restriction. Full name, unique normalized immutable registration number, course, branch, department, section, academic year and mobile number are required for student onboarding. Complete details give immediate registration eligibility without manual approval. Do not label self-declared details as university-verified.
+- Initial authorized admin emails are `officialtechspaceclub@gmail.com` and `harutoxokura15@gmail.com`. Bootstrap only from matching confirmed Google identities and protected backend records, never editable user metadata. Current admins may grant/revoke confirmed registered accounts with an audited reason; reject self-revocation and recheck authority while serializing role changes. Keep only student/admin roles.
 - Enforce event publication, registration windows, eligibility, uniqueness and capacity atomically on the backend. Client validation is for usability only.
 - Use event-specific QR credentials that do not expose plain roll numbers. Validate scanner authority, event, registration, check-in window and duplicates on the backend. Record actor, time and reason for corrections.
 - Apply announcement audience rules to reads and delivery. Save the dashboard record independently of email processing; rate-limit, retry and report email failures.
@@ -55,7 +56,7 @@ These are planned choices, not evidence of provisioned infrastructure. Do not as
 
 ## Handling unresolved decisions
 
-Consult section 15 of the specification. University verification, admin provisioning, cancellation policy, email provider/worker/sender, query attachments, certificate layout/retention/email policy, deployment branding, and institutional retention/consent are unresolved.
+Consult section 15 of the specification. Student eligibility and admin provisioning policy are resolved by the user as recorded in decision 005; Google activation and real OAuth validation remain setup dependencies. Cancellation policy, email provider/worker/sender, query attachments, certificate layout/retention/email policy, deployment branding, and institutional retention/consent remain unresolved.
 
 Do not silently turn suggested defaults into approved policy. Continue independent work where possible, record assumptions as proposals, and request the relevant decision before shipping dependent behavior. The proposed 30-day PDF retention is not an approved cleanup policy.
 

@@ -58,10 +58,10 @@ for line in (ROOT / 'apps/student/.env.local').read_text(encoding='utf-8-sig').s
     if '=' in line and not line.lstrip().startswith('#'):
         key, value = line.split('=', 1)
         env[key.strip()] = value.strip().strip('"').strip("'")
-BASE = env['VITE_MAIN_SUPABASE_URL'].rstrip('/')
+BASE = env['NEXT_PUBLIC_MAIN_SUPABASE_URL'].rstrip('/')
 if BASE != 'https://amagfwugfinplxhkauig.supabase.co':
     raise SystemExit('Refusing test: browser URL does not match MAIN.')
-PUBLIC_KEY = env['VITE_MAIN_SUPABASE_PUBLISHABLE_KEY']
+PUBLIC_KEY = env['NEXT_PUBLIC_MAIN_SUPABASE_PUBLISHABLE_KEY']
 
 
 def http(path, body, token=None):
@@ -71,11 +71,12 @@ def http(path, body, token=None):
     request = urllib.request.Request(BASE + path, data=json.dumps(body).encode(), headers=headers)
     try:
         with urllib.request.urlopen(request, timeout=45) as response:
-            return {'rows': json.load(response)}
+            payload = response.read()
+            return {'rows': json.loads(payload) if payload else None}
     except urllib.error.HTTPError as error:
         details = json.loads(error.read())
         message = details.get('message', '')
-        for expected in ['EVENT_FULL', 'ALREADY_REGISTERED', 'CAPACITY_BELOW_REGISTRATIONS']:
+        for expected in ['EVENT_FULL', 'ALREADY_REGISTERED', 'CAPACITY_BELOW_REGISTRATIONS', 'ADMIN_REQUIRED']:
             if expected in message:
                 return {'error': expected}
         raise RuntimeError('Unexpected authenticated HTTP request failure; response withheld.') from None
@@ -112,8 +113,8 @@ try:
                   "insert into auth.identities(user_id,provider_id,identity_data,provider,created_at,updated_at) "
                   f"values ('{user}','{user}','{{\"sub\":\"{user}\",\"email\":\"{emails[user]}\",\"email_verified\":true}}','email',now(),now()); ")
     for user in users:
-        setup += (f"insert into public.profiles(user_id,full_name,roll_number,department,academic_year,verification_status) "
-                  f"values ('{user}','Concurrency test','{user.replace('-', '').upper()}','Test',1,'verified'); ")
+        setup += (f"insert into public.profiles(user_id,full_name,roll_number,department,academic_year,verification_status,course,branch,section,mobile_number) "
+                  f"values ('{user}','Concurrency test','{user.replace('-', '').upper()}','Test',1,'unverified','B.Tech','CSE','A','9876543210'); ")
     setup += f"insert into public.admin_users(user_id) values ('{admin}'); "
     for index, event in enumerate(events):
         capacity = [1, 10, 2][index]
@@ -149,10 +150,26 @@ try:
                   f"left join public.registrations r on r.event_id=e.id where e.id='{events[2]}' group by e.id;")["rows"][0]
     assert 0 < final["registrations"] <= final["capacity"], "Capacity edit raced past registration lock"
     print("PASS: admin capacity edit raced with six registrations; committed count stayed within committed capacity.", flush=True)
+
+    # Both callers are admins before the race. The lock must recheck authority
+    # after waiting, so the winner cannot be revoked by the now-revoked caller.
+    assert 'rows' in http('/rest/v1/rpc/admin_set_access', {
+        'p_email': emails[users[0]], 'p_active': True, 'p_reason': 'Synthetic concurrency peer',
+    }, tokens[admin])
+    results = parallel([
+        ('/rest/v1/rpc/admin_set_access', {'p_email': emails[users[0]], 'p_active': False, 'p_reason': 'Synthetic revocation race'}, tokens[admin]),
+        ('/rest/v1/rpc/admin_set_access', {'p_email': emails[admin], 'p_active': False, 'p_reason': 'Synthetic revocation race'}, tokens[users[0]]),
+    ])
+    assert sum('rows' in result for result in results) == 1
+    assert sum(result.get('error') == 'ADMIN_REQUIRED' for result in results) == 1
+    remaining = query(f"select count(*)::integer as active from public.admin_users where active and user_id in ('{admin}','{users[0]}');")['rows'][0]
+    assert remaining['active'] == 1, 'Concurrent revocations removed all admins'
+    print('PASS: simultaneous cross-admin revocations left one active admin; revoked caller was denied.', flush=True)
 finally:
     query("begin; "
           f"delete from public.registrations where event_id in ({event_list}); "
           f"delete from public.events where id in ({event_list}); "
+          f"delete from public.admin_email_access where user_id in ({user_list}); "
           f"delete from public.admin_users where user_id in ({user_list}); "
           f"delete from public.profiles where user_id in ({user_list}); "
           f"delete from public.audit_logs where actor_id in ({user_list}) or entity_id in ({user_list},{event_list}); "

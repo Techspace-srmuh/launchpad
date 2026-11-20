@@ -144,7 +144,7 @@ flowchart LR
 
 ## 4. Screens and navigation
 
-**Launchpad Control (Admin):** Dashboard · Events (detail includes registrations, QR scanning, certificates, gallery/resources, queries) · Announcements · Certificate Templates · Settings (minimal).
+**Launchpad Control (Admin):** Dashboard · Events (detail includes registrations, QR scanning, certificates, gallery/resources, queries) · Admin access · Announcements · Certificate Templates · Settings (minimal).
 
 **Launchpad (Student):** Home · Explore Events · My Events (QR and attendance) · Announcements · My Certificates · Profile. Event detail includes Gallery, Resources, and Questions as tabs/sections, not standalone applications.
 
@@ -153,10 +153,12 @@ flowchart LR
 ## 5. Functional requirements
 
 ### F01 — Google sign-in and profiles (MVP)
-- **Student:** Sign in with Google and provide full name, unique normalized university roll number, department, academic year, and university identity proof where required.
-- **Admin:** Log in through the shared identity system; admin permission comes from a protected server-side allowlist/role record.
-- **Rules:** Google login alone does not prove enrollment. Returning students reuse their profile. No duplicate roll-number claims. Students can edit only permitted fields. No official club membership process.
-- **Open:** select trusted university verification mechanism (managed domain or manual verification) and admin provisioning process.
+- **Student:** Sign in with a personal Gmail or university Google account. Complete onboarding with full name, unique normalized registration/roll number, course, branch, department, section, academic year and mobile number. The user-confirmed university address format is `registration_number@stu.srmuviversity.ac.in`; this domain is informative, not a sign-in restriction.
+- **Eligibility — confirmed by user, 20 November 2026:** completing these details makes the student eligible to register immediately. No manual approval or institutional verification is required. Google ownership and self-declared profile details do not prove enrollment; retain verification metadata without presenting completion as verified university identity.
+- **Admin:** permission comes from protected backend records. Initial authorized emails are `officialtechspaceclub@gmail.com` and `harutoxokura15@gmail.com`. Automatic initial access requires a confirmed Google identity matching an active backend authorization; editable browser/user metadata cannot grant admin status.
+- **Admin workflow — confirmed by user:** a current admin may grant or revoke access for a confirmed registered account by exact email with a recorded reason. Enforce authority, audit actor/time/reason and reject self-revocation on the backend. Serialize role changes and recheck the actor's authority inside the lock. Keep only the student and admin roles.
+- **Rules:** returning users reuse their profile. Normalized roll claims are unique and immutable through the student profile RPC. Students may edit other permitted profile details. New fields may remain null on legacy records until completed; do not invent profile data during migration. No official club membership process.
+- **Integration pending:** Google OAuth provider activation and real Google login validation. See the [onboarding/admin decision](docs/decisions/005-student-onboarding-admin-access.md) and [Google setup runbook](docs/runbooks/google-auth.md). These scoped decisions do not approve the whole draft specification.
 
 ### F02 — Events and registration (MVP)
 - **Admin:** Create/edit/publish/complete/cancel events with title, description, poster URL, date/time, venue, registration opening/closing, optional capacity.
@@ -257,8 +259,9 @@ flowchart TD
 
 | Table | Minimal fields / responsibility |
 |---|---|
-| `profiles` | `user_id`, roll number (unique normalized), name, department, academic year, verification status |
+| `profiles` | `user_id`, roll number (unique normalized), name, course, branch, department, section, academic year, mobile number, verification metadata |
 | `admin_users` | protected `user_id`, active state |
+| `admin_email_access` | protected normalized authorized email, active state, linked user where present, change actor/time/reason |
 | `events` | `id`, title, description, times, venue, status, registration window, capacity, poster URL |
 | `registrations` | `id`, event ID, user ID, state, created timestamp; unique student/event |
 | `attendance` | `id`, event ID, registration ID, timestamp, checked_by, correction audit; unique primary check-in |
@@ -301,6 +304,8 @@ flowchart TD
 **Authorized framework change, 20 November 2026:** the user requested migration of both Vite apps to Next.js and compatibility with Vercel. This changes frontend routing/build/deployment contracts; existing Supabase identity, RLS, protected RPCs and release boundaries remain. See the [migration decision](docs/decisions/004-nextjs-migration.md). The overall v2.0.0 specification remains draft pending stakeholder approval; this request does not approve unresolved production policies.
 
 **Authorized development order, 20 November 2026:** the user requested functional event workflows and a simple UI before Google OAuth integration. Development-only real test-account login may exercise the identity/data foundation; this does not change the Google sign-in requirement for release or approve university verification/admin-provisioning policies. See the [development access decision](docs/decisions/003-development-access.md). Redis credentials are server-only, cached data is disposable, and registration correctness remains enforced atomically in PostgreSQL.
+
+**Subsequent identity policy approval, 20 November 2026:** the user accepted personal Gmail alongside university Google accounts, immediate event eligibility after complete onboarding without manual approval, the two initial admin emails and admin-managed grants/revocations. This supersedes earlier suggestions of a university-domain or verified-profile registration gate. Google activation is still an external setup dependency; the overall specification remains draft. Mobile numbers are private profile data subject to existing RLS and unresolved institutional retention/consent requirements.
 
 ## 10. Storage, cost and retention rules
 
@@ -352,8 +357,8 @@ flowchart TD
 
 | ID | Acceptance criterion |
 |---|---|
-| AT-01 | New student signs in, completes profile once; returning user sees same profile |
-| AT-02 | Non-admin cannot access admin operations, including direct API calls |
+| AT-01 | Personal Gmail and university Google users complete all onboarding fields and may immediately register without approval; returning users retain their profile; duplicate normalized roll claims and incomplete profile registration are denied |
+| AT-02 | Non-admin cannot invoke admin operations or grant access through direct APIs/metadata; approved initial Google identities receive access; admins can auditably grant/revoke confirmed registered accounts, with self-revocation and stale-authority role edits denied |
 | AT-03 | Admin publishes an event and student can discover/register |
 | AT-04 | Duplicate registration and capacity-overrun attempts are rejected under concurrency |
 | AT-05 | Student gets event QR; authorized scan records exactly one check-in |
@@ -385,8 +390,8 @@ flowchart TD
 
 | Decision | Suggested default | Required before |
 |---|---|---|
-| University identity validation | Institution-managed email domain or approved manual review | Student onboarding launch |
-| Admin provisioning | Protected allowlist controlled by system owner | Admin app launch |
+| Student identity/eligibility | **Resolved by user, 20 November 2026:** personal Gmail or university Google; complete onboarding gives immediate eligibility, no approval. No university-verification claim. | Google activation and real onboarding validation remain required |
+| Admin provisioning | **Resolved by user:** two initial authorized emails; confirmed Google bootstrap and audited admin-managed grant/revoke for confirmed registered accounts. | Backend authorization checks and real Google bootstrap validation |
 | Registration cancellation | Not provided initially unless required | Event launch policy |
 | Email provider / verified sender | Pick provider with documented sending limits, verified sender, queue | Email delivery |
 | Private query attachment handling | Drive links for public resources; private bucket for sensitive uploads | Query attachments |

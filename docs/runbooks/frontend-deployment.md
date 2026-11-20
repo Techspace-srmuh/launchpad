@@ -38,7 +38,7 @@ Set Project 1 `NEXT_PUBLIC_MAIN_SUPABASE_URL`, `NEXT_PUBLIC_MAIN_SUPABASE_PUBLIS
 
 Redis configuration belongs to the MAIN Edge Function environment; see the [Redis runbook](redis-events.md) for exact deployment-origin CORS settings before enabling the cache flag. Project 2 is linked for future work but neither frontend contacts it. Do not add a Project 2 browser client.
 
-The password test-account form is gated by `process.env.NODE_ENV === "development"` and available only in `next dev`; Vercel Preview and Production builds omit it. Production builds have no interactive login until Google is connected. MAIN RLS and protected RPCs enforce admin operations even for an existing session. Configure OAuth callback origins and settle university verification/admin provisioning before production access. Camera scanning, PWA install/update behavior and recovery verification belong to later delivery phases.
+The password test-account form is gated by `process.env.NODE_ENV === "development"` and available only in `next dev`; Vercel Preview and Production builds omit it. Google sign-in code uses the app's current origin plus `/account` as its return URL. Enable the MAIN Google provider and add the exact student/admin HTTPS return URLs to Supabase's allowlist before testing hosted sign-in; see the [Google setup runbook](google-auth.md). MAIN's provider is currently disabled and no real Google login is claimed. Personal Gmail and university Google accounts are both allowed. Complete student onboarding gives immediate eligibility without approval; admins are assigned through protected backend records. Camera scanning, PWA install/update behavior and recovery verification remain later delivery phases.
 
 ## Release check
 

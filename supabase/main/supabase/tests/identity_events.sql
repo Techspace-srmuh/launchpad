@@ -30,9 +30,9 @@ insert into auth.users (id, aud, role, email, raw_app_meta_data, raw_user_meta_d
 select id, 'authenticated', 'authenticated', id::text || '@launchpad-test.invalid', '{}'::jsonb, '{}'::jsonb
 from fixtures where name in ('admin','student','other','unverified','no_profile','duplicate_profile');
 insert into public.admin_users(user_id) select id from fixtures where name='admin';
-insert into public.profiles(user_id, full_name, roll_number, department, academic_year, verification_status)
+insert into public.profiles(user_id, full_name, roll_number, department, academic_year, verification_status, course, branch, section, mobile_number)
 select id, name, upper(replace(id::text,'-','')), 'Test department', 2,
-  case when name='unverified' then 'unverified' else 'verified' end
+  'unverified', case when name='unverified' then null else 'B.Tech' end, 'CSE', 'A', '9876543210'
 from fixtures where name in ('student','other','unverified');
 insert into public.events(id,title,description,starts_at,ends_at,venue,registration_opens_at,registration_closes_at,capacity,status,created_by)
 select id, name, 'Test event', now()+interval '2 days', now()+interval '3 days', 'Test venue',
@@ -48,7 +48,7 @@ select pg_temp.check_true((select bool_and(relrowsecurity) from pg_class where o
 set local role anon;
 select pg_temp.check_error('select * from public.events','42501',null,'anonymous event reads denied');
 select pg_temp.check_error('select public.is_admin()','42501',null,'anonymous admin checks denied');
-select pg_temp.check_error('select public.save_profile(''X'',''R123'',''D'',1)','42501',null,'anonymous profile writes denied');
+select pg_temp.check_error('select public.save_profile(''X'',''R123'',''D'',1,''B.Tech'',''CSE'',''A'',''9876543210'')','42501',null,'anonymous profile writes denied');
 reset role;
 
 select set_config('request.jwt.claim.sub',(select id::text from fixtures where name='student'),true);
@@ -63,7 +63,7 @@ select pg_temp.check_error('update public.profiles set verification_status=''ver
 select pg_temp.check_error('delete from public.audit_logs','42501',null,'audit deletion denied');
 select pg_temp.check_error('update public.events set capacity=999','42501',null,'direct event edits denied');
 select pg_temp.check_error('select public.admin_save_event(''{}''::jsonb)','42501','ADMIN_REQUIRED','student admin RPC denied');
-select pg_temp.check_error('select public.save_profile(''Name'',''changed-roll'',''D'',1)','22023','ROLL_NUMBER_IMMUTABLE','roll changes denied');
+select pg_temp.check_error('select public.save_profile(''Name'',''changed-roll'',''D'',1,''B.Tech'',''CSE'',''A'',''9876543210'')','22023','ROLL_NUMBER_IMMUTABLE','roll changes denied');
 select pg_temp.check_error('select public.register_for_event((select id from fixtures where name=''draft''))','22023','EVENT_NOT_OPEN','draft registration denied');
 select pg_temp.check_error('select public.register_for_event((select id from fixtures where name=''closed''))','22023','EVENT_NOT_OPEN','closed registration denied');
 select pg_temp.check_error('select public.register_for_event((select id from fixtures where name=''future''))','22023','EVENT_NOT_OPEN','early registration denied');
@@ -82,25 +82,25 @@ reset role;
 
 select set_config('request.jwt.claim.sub',(select id::text from fixtures where name='unverified'),true);
 set local role authenticated;
-select pg_temp.check_error('select public.register_for_event((select id from fixtures where name=''published''))','42501','VERIFICATION_REQUIRED','unverified registration denied');
+select pg_temp.check_error('select public.register_for_event((select id from fixtures where name=''published''))','42501','PROFILE_DETAILS_REQUIRED','incomplete onboarding registration denied');
 reset role;
 
 select set_config('request.jwt.claim.sub',(select id::text from fixtures where name='no_profile'),true);
 set local role authenticated;
 select pg_temp.check_error('select public.register_for_event((select id from fixtures where name=''published''))','42501','PROFILE_REQUIRED','missing profile denied');
-select pg_temp.check_true((public.save_profile(' New Student ',' abc 123 ',' CS ',1)).roll_number='ABC123','roll normalized');
-select pg_temp.check_true((select verification_status='unverified' from public.profiles where user_id=auth.uid()),'onboarding does not verify student');
-select pg_temp.check_error('select public.save_profile(''N'',''ABC123'',''D'',9)','23514',null,'invalid academic year rejected');
+select pg_temp.check_true((public.save_profile(' New Student ',' abc 123 ',' CS ',1,'B.Tech','CSE','A','9876543210')).roll_number='ABC123','roll normalized');
+select pg_temp.check_true((select verification_status='unverified' from public.profiles where user_id=auth.uid()),'self-declared onboarding does not claim university verification');
+select pg_temp.check_error('select public.save_profile(''N'',''ABC123'',''D'',9,''B.Tech'',''CSE'',''A'',''9876543210'')','23514',null,'invalid academic year rejected');
 reset role;
 
 select set_config('request.jwt.claim.sub',(select id::text from fixtures where name='duplicate_profile'),true);
 set local role authenticated;
-select pg_temp.check_error('select public.save_profile(''N'','' abc 123 '',''D'',1)','23505',null,'normalized roll claims unique across users');
+select pg_temp.check_error('select public.save_profile(''N'','' abc 123 '',''D'',1,''B.Tech'',''CSE'',''A'',''9876543210'')','23505',null,'normalized roll claims unique across users');
 reset role;
 
 select set_config('request.jwt.claim.sub',(select id::text from fixtures where name='unverified'),true);
 set local role authenticated;
-select pg_temp.check_error('select public.save_profile(''N'',''ABC123'',''D'',1)','22023','ROLL_NUMBER_IMMUTABLE','existing roll cannot be replaced with another claim');
+select pg_temp.check_error('select public.save_profile(''N'',''ABC123'',''D'',1,''B.Tech'',''CSE'',''A'',''9876543210'')','22023','ROLL_NUMBER_IMMUTABLE','existing roll cannot be replaced with another claim');
 reset role;
 
 select set_config('request.jwt.claim.sub',(select id::text from fixtures where name='admin'),true);

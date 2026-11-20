@@ -43,8 +43,9 @@ test("real admin publishes, student registers, and unauthorized direct requests 
       expect(error?.message, `${role} test account can authenticate`).toBeUndefined();
     }
     const anonymous = createClient(url, key, { auth: { persistSession: false } });
-    const anonymousRead = await anonymous.functions.invoke("events-read", { body: {} });
+    const anonymousRead = await anonymous.functions.invoke("events-read", { timeout: 15_000, body: {} });
     expect(anonymousRead.error).not.toBeNull();
+    expect([401, 403]).toContain(anonymousRead.response?.status);
     await login(adminPage, adminOrigin, accounts.admin);
     await adminPage.goto(`${adminOrigin}/events/new`);
     await adminPage.getByLabel("Title", { exact: true }).fill(eventTitle);
@@ -65,7 +66,7 @@ test("real admin publishes, student registers, and unauthorized direct requests 
     const draftRead = await clients.student.from("events").select("id").eq("id", event.id);
     expect(draftRead.error).toBeNull();
     expect(draftRead.data).toEqual([]);
-    const draftFunctionRead = await clients.student.functions.invoke("events-read", { body: { event_id: event.id } });
+    const draftFunctionRead = await clients.student.functions.invoke("events-read", { timeout: 15_000, body: { event_id: event.id } });
     expect(draftFunctionRead.error).toBeNull();
     expect(draftFunctionRead.data.events).toEqual([]);
 
@@ -83,19 +84,24 @@ test("real admin publishes, student registers, and unauthorized direct requests 
     await adminPage.getByRole("button", { name: "Save event", exact: true }).click();
     await expect(adminPage.getByText(eventTitle, { exact: true })).toBeVisible();
 
-    const publishedFunctionRead = await clients.student.functions.invoke("events-read", { body: { event_id: event.id } });
+    const publishedFunctionRead = await clients.student.functions.invoke("events-read", { timeout: 15_000, body: { event_id: event.id } });
     expect(publishedFunctionRead.error).toBeNull();
     expect(publishedFunctionRead.data.events[0].title).toBe(eventTitle);
     const unverified = await clients.unverified.rpc("register_for_event", { p_event_id: event.id });
-    expect(unverified.error?.message).toContain("VERIFICATION_REQUIRED");
+    expect(unverified.error?.message).toContain("PROFILE_DETAILS_REQUIRED");
     await login(studentPage, studentOrigin, accounts.student);
     await studentPage.setViewportSize({ width: 390, height: 844 });
     await studentPage.goto(`${studentOrigin}/profile`);
     await studentPage.getByLabel("Full name", { exact: true }).fill("Integration student updated");
+    await studentPage.getByLabel("Course", { exact: true }).fill("B.Tech");
+    await studentPage.getByLabel("Branch", { exact: true }).fill("Computer Science");
+    await studentPage.getByLabel("Section", { exact: true }).fill("A");
+    await studentPage.getByLabel("Mobile number", { exact: true }).fill("+91 98765 43210");
     await studentPage.getByRole("button", { name: "Save profile", exact: true }).click();
     await expect(studentPage.getByText("Profile saved.", { exact: true })).toBeVisible();
     const savedProfile = await clients.student.from("profiles").select("full_name,verification_status").single();
-    expect(savedProfile.data).toMatchObject({ full_name: "Integration student updated", verification_status: "verified" });
+    expect(savedProfile.data).toMatchObject({ full_name: "Integration student updated", verification_status: "unverified" });
+    expect((await clients.student.rpc("is_admin")).data).toBe(false);
     await studentPage.goto(`${studentOrigin}/events`);
     await studentPage.getByRole("link", { name: eventTitle, exact: true }).click();
     await studentPage.getByRole("button", { name: "Register for event", exact: true }).click();
@@ -119,6 +125,27 @@ test("real admin publishes, student registers, and unauthorized direct requests 
       await login(otherPage, adminOrigin, accounts.other);
       await otherPage.goto(`${adminOrigin}/events`);
       await expect(otherPage.getByRole("heading", { name: "Admin access required", exact: true })).toBeVisible();
+      const illicitRoleChange = await clients.other.rpc("admin_set_access", { p_email: accounts.other.email, p_active: true, p_reason: "Attempt self promotion" });
+      expect(illicitRoleChange.error?.message).toContain("ADMIN_REQUIRED");
+      await adminPage.goto(`${adminOrigin}/admins`);
+      await adminPage.getByLabel("Account email", { exact: true }).fill(accounts.other.email);
+      await adminPage.getByLabel("Reason", { exact: true }).fill("Integration role grant");
+      await adminPage.getByRole("button", { name: "Save admin access", exact: true }).click();
+      await expect(adminPage.getByText("Admin access granted.", { exact: true })).toBeVisible();
+      expect((await clients.other.rpc("is_admin")).data).toBe(true);
+      await otherPage.goto(`${adminOrigin}/admins`);
+      await expect(otherPage.getByRole("heading", { name: "Admin access", exact: true })).toBeVisible();
+      const selfRevoke = await clients.other.rpc("admin_set_access", { p_email: accounts.other.email, p_active: false, p_reason: "Attempt self revocation" });
+      expect(selfRevoke.error?.message).toContain("SELF_REVOKE_NOT_ALLOWED");
+      await adminPage.getByLabel("Action", { exact: true }).selectOption("revoke");
+      await adminPage.getByLabel("Reason", { exact: true }).fill("Integration role revoke");
+      await adminPage.getByRole("button", { name: "Save admin access", exact: true }).click();
+      await expect(adminPage.getByText("Admin access revoked.", { exact: true })).toBeVisible();
+      expect((await clients.other.rpc("sync_admin_access")).data).toBe(false);
+      const revokedDirectory = await clients.other.rpc("admin_list_access");
+      expect(revokedDirectory.error?.message).toContain("ADMIN_REQUIRED");
+      await otherPage.reload();
+      await expect(otherPage.getByRole("heading", { name: "Admin access required", exact: true })).toBeVisible();
     } finally {
       await otherContext.close();
     }
@@ -130,7 +157,7 @@ test("real admin publishes, student registers, and unauthorized direct requests 
     await expect(adminPage.getByText(eventTitle, { exact: true })).toBeVisible();
     const closed = await clients.other.rpc("register_for_event", { p_event_id: event.id });
     expect(closed.error?.message).toContain("EVENT_NOT_OPEN");
-    const closedFunctionRead = await clients.student.functions.invoke("events-read", { body: { event_id: event.id } });
+    const closedFunctionRead = await clients.student.functions.invoke("events-read", { timeout: 15_000, body: { event_id: event.id } });
     expect(closedFunctionRead.error).toBeNull();
     expect(closedFunctionRead.data.events[0].status).toBe("closed");
     await studentPage.goto(`${studentOrigin}/account`);

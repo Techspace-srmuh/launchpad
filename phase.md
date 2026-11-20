@@ -2,7 +2,7 @@
 
 This workflow implements [the source-of-truth specification](TechSpace_Launchpad_SOURCE_OF_TRUTH.md), v2.0.0, which remains a draft pending stakeholder approval. The phases organize delivery; they do not approve open product decisions or expand scope. See [folder architecture](docs/architecture.md) for implementation locations.
 
-**Current state:** Phase 1 is **complete**. Both apps now use Next.js App Router with separate Vercel configurations, as requested on 20 November 2026. MAIN migrations and development identity/event workflows are implemented, with an optional Redis event-read function deployed. Google OAuth, university verification/admin-provisioning policy and the rest of Release 1 remain incomplete. Redis provisioning and frontend deployment are pending. See the dated records below; Phase 0 policy decisions remain open and Phase 2/3 are not declared release-complete.
+**Current state:** Phase 1 is **complete**. Both apps use Next.js App Router with separate Vercel configurations. The user has approved personal/university Google accounts, immediate eligibility after complete self-declared student onboarding, and admin-managed access. MAIN now has the onboarding/admin-access migration, in addition to identity/events and the optional event-read function. Google sign-in code is implemented, but MAIN's Google provider remains disabled and real Google login is unverified. Redis provisioning, frontend deployment and remaining Release 1 workflows are pending. The overall specification remains draft; Phase 2/3 are not declared release-complete.
 
 ## Phase overview
 
@@ -10,7 +10,7 @@ This workflow implements [the source-of-truth specification](TechSpace_Launchpad
 |---|---|---|---|---|
 | 0 | Confirm scope and record decisions needed to begin | Stakeholder decisions | Foundation | Pending |
 | 1 | Runnable workspace and two app shells | 0 for affected decisions | Foundation | Complete: validated 20 November 2026 |
-| 2 | Shared identity, student profiles and protected admin access | 1 | 1 | Development foundation implemented; Google and policies pending |
+| 2 | Shared identity, student profiles and protected admin access | 1 | 1 | Onboarding/admin policy implemented; real Google activation/validation pending |
 | 3 | Event publishing and atomic registration | 2 | 1 | Development workflow verified; release depends on Phase 2/policy |
 | 4 | Secure event QR attendance | 3 | 1 | Pending |
 | 5 | Targeted announcements, OD links and queued email | 3; email decisions | 1 | Pending |
@@ -25,7 +25,7 @@ Phase 5 can proceed alongside Phase 4 after registration is stable. Phases 8 and
 ## Phase 0 - Scope and decisions
 
 - Review the draft with stakeholders and record approval or revisions.
-- Confirm student university-verification and admin-provisioning policies before implementing onboarding.
+- Student onboarding/admin-access policies were approved on 20 November 2026; see [decision 005](docs/decisions/005-student-onboarding-admin-access.md). Keep remaining production decisions explicit.
 - Record registration cancellation policy and establish who owns production operations.
 - Track email provider, verified sender, worker/scheduler and documented quotas as decisions required before email delivery.
 - Track university consent/retention and authorized domains/branding before public rollout. Defer certificate and attachment decisions until their dependent phases.
@@ -82,14 +82,29 @@ Phase 5 can proceed alongside Phase 4 after registration is stable. Phases 8 and
 
 ## Phase 2 - Identity and authorization
 
-- Configure Project 1 Google OAuth for both app origins and selected student-verification policy.
+- Configure Project 1 Google OAuth for both app origins, accepting personal Gmail and university Google accounts. Complete student details give immediate eligibility without manual verification.
 - Add migrations for profiles, protected admin records, audit foundation and required RLS.
-- Implement student onboarding, unique normalized roll numbers, returning-user profiles and permitted edits.
-- Implement admin provisioning and backend-enforced access checks, plus unauthorized/session-expired states.
+- Implement student onboarding with full name, unique normalized registration number, course, branch, department, section, academic year and mobile number; retain returning profiles and permitted edits.
+- Provision the two approved initial Google admins and implement audited admin-managed grants/revocations with backend authority checks and unauthorized/session-expired states.
 
 **Deliverable:** shared sign-in and distinct student/admin access using real records.
 
 **Exit:** AT-01 and AT-02 pass, including direct API attempts and student-to-student isolation.
+
+### User-approved onboarding and admin access - 20 November 2026
+
+- The user approved personal Gmail and university Google accounts, the domain `stu.srmuviversity.ac.in`, full student details and immediate registration eligibility without manual approval. Completion is self-declared and is not presented as institutional verification. See [decision 005](docs/decisions/005-student-onboarding-admin-access.md).
+- Applied MAIN migration `20261120020000_onboarding_admin_access.sql`: nullable legacy profile fields for course/branch/section/mobile, expanded profile RPC and complete-profile registration eligibility. Unique immutable normalized registration numbers, private profile RLS and atomic event rules remain enforced. Existing profiles must fill new fields; no fabricated data was added.
+- Added the Google sign-in entry point in both apps, same-origin `/account` returns, bounded provider-configuration checks and sanitized cancellation/error handling. Password test login remains development-only. A complete profile can register while `verification_status` remains `unverified`.
+- Added protected email authorizations for `officialtechspaceclub@gmail.com` and `harutoxokura15@gmail.com`; MAIN reports **two active authorizations, zero linked accounts**. They will claim admin authority after confirmed matching Google sign-in. No real-user account, password or invitation was created.
+- Added Control `/admins`, with grant/revoke by exact confirmed-account email, audit reason, loading/error/empty states and paginated access records. Backend authority is rechecked under a shared lock; self-revocation, student promotion, metadata spoofing and reactivation of revoked Google grants are denied.
+- MAIN rollback SQL suites: **49 existing checks and 37 onboarding/admin checks pass**. Tests cover profile completeness, immediate registration without verification, invalid phone/duplicate roll denial, private fields, confirmed Google identity matching, untrusted metadata denial and audited grant/revoke permissions.
+- Real concurrency tests: **4/4 pass** for final-seat contention, duplicate attempts, capacity edits and simultaneous cross-admin revocations. The revocation race leaves one active admin and rejects the now-revoked actor. Synthetic fixtures are removed afterward.
+- `npm run check`: **passed**, including application/shared/backend/tooling types, ESLint, **40 unit tests** and both Next.js production builds. Desktop/mobile navigation checks: **8/8 passed**, including denied direct access to `/admins` when configuration is absent.
+- Production browser checks: **4/4 passed**, including Google provider-disabled messaging, sanitized cancellation returns, absence of development password login, direct event/admin routes and HTTP 404 recovery. These controlled failure tests do not claim successful Google authentication.
+- `npm run test:live`: **one expanded integrated browser/API scenario passed** against MAIN. An initially incomplete, unverified student fills course/branch/section/mobile and immediately registers; private records remain isolated. A current admin grants access from `/admins`, the target can enter Control, self-revocation is rejected, another admin revokes access and subsequent API/page access is denied. Event publication/closing, capacity/duplicate failures, deployed event-read authorization and sign-out remain covered. All synthetic accounts, authorizations and event records were removed. The test exposed and corrected accessible labels for the mobile field and action selector. One earlier run hit an external event-read network failure; invocations are now bounded to 15 seconds and the passing run also checked the anonymous HTTP denial status.
+- **Remaining external setup:** MAIN Google provider is disabled. Configure an External-audience Google OAuth client and exact Supabase/app callbacks using the [Google setup runbook](docs/runbooks/google-auth.md), then test real personal/university logins and both initial admins. Synthetic identities do not verify real Google consent or account ownership. Phase 2 and public rollout remain incomplete until this passes.
+- **Next product phase:** secure event-specific QR attendance (Phase 4). Certificates and private questions remain Release 2; consent/retention, email and later release decisions are unchanged.
 
 ## Phase 3 - Events and registration
 

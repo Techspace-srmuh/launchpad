@@ -6,7 +6,21 @@ export interface ProfileRecord {
   roll_number: string;
   department: string;
   academic_year: number;
+  course: string | null;
+  branch: string | null;
+  section: string | null;
+  mobile_number: string | null;
   verification_status: "unverified" | "verified";
+}
+
+// Completeness is a usability hint. The registration RPC enforces eligibility.
+export function isProfileComplete(profile: ProfileRecord | null | undefined): boolean {
+  if (!profile) return false;
+  return [profile.full_name, profile.department, profile.course, profile.branch, profile.section]
+    .every((value) => typeof value === "string" && value.trim().length > 0)
+    && /^[A-Z0-9][A-Z0-9-]{1,39}$/.test(profile.roll_number)
+    && Number.isInteger(profile.academic_year) && profile.academic_year >= 1 && profile.academic_year <= 8
+    && typeof profile.mobile_number === "string" && /^\+?[0-9]{10,15}$/.test(profile.mobile_number);
 }
 
 export type EventStatus = "draft" | "published" | "closed" | "completed" | "cancelled";
@@ -36,7 +50,7 @@ export interface RegistrationRecord {
 
 const messages: Record<string, string> = {
   PROFILE_REQUIRED: "Complete your student profile before registering.",
-  VERIFICATION_REQUIRED: "University verification is required before registration. Your profile cannot verify itself.",
+  PROFILE_DETAILS_REQUIRED: "Complete all student details before registering for events.",
   EVENT_NOT_OPEN: "Registration is not open for this event.",
   EVENT_FULL: "This event has reached its capacity.",
   ALREADY_REGISTERED: "You are already registered for this event.",
@@ -48,6 +62,12 @@ const messages: Record<string, string> = {
   PUBLISHED_EVENT_CANNOT_RETURN_TO_DRAFT: "An event that has been published cannot return to draft. Close or cancel it instead.",
   EVENT_STATUS_FINAL: "Completed and cancelled events cannot change status.",
   INVALID_EVENT: "The event could not be saved. Check the event fields and try again.",
+  INVALID_PROFILE: "Check your student details and enter a mobile number with 10–15 digits, optionally starting with +.",
+  INVALID_MOBILE_NUMBER: "Enter a mobile number with 10–15 digits, optionally starting with +.",
+  ACCOUNT_NOT_FOUND: "No confirmed account was found for that email address. Ask the person to sign in first.",
+  SELF_REVOKE_NOT_ALLOWED: "Ask another admin to remove your access. You cannot revoke your own admin access.",
+  INVALID_ADMIN_EMAIL: "Enter a valid email address for this admin account.",
+  ADMIN_REASON_REQUIRED: "Enter a reason for this access change.",
 };
 
 export function workflowError(error: unknown): string {
@@ -57,7 +77,7 @@ export function workflowError(error: unknown): string {
     if (error.code === "23505" && message.includes("roll_number")) return "That roll number is already claimed by another account.";
     if (error.code === "23514") return message.includes("events")
       ? "Check the field values and date order. Registration must close after it opens; the event must end after it starts. Poster links must use HTTPS."
-      : "Check your profile values. Roll numbers must contain 2–40 letters, numbers or hyphens; academic year must be between 1 and 8.";
+      : "Check your student details. Registration numbers must contain 2–40 letters, numbers or hyphens; academic year must be 1–8 and mobile numbers must contain 10–15 digits.";
   }
   if (/jwt expired|invalid jwt|session.*expired/i.test(message)) return "Your session has expired. Sign in again.";
   return message;

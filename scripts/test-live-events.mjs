@@ -42,8 +42,8 @@ insert into auth.users (instance_id,id,aud,role,email,encrypted_password,email_c
 values ('00000000-0000-0000-0000-000000000000','${account.id}','authenticated','authenticated','${account.email}',extensions.crypt('${password}',extensions.gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{}',now(),now(),'','','','');
 insert into auth.identities (id,user_id,provider_id,identity_data,provider,created_at,updated_at)
 values ('${randomUUID()}','${account.id}','${account.id}','{"sub":"${account.id}","email":"${account.email}","email_verified":true}','email',now(),now());
-insert into public.profiles(user_id,full_name,roll_number,department,academic_year,verification_status)
-values ('${account.id}','Integration ${role}','TEST${runId.toUpperCase()}${index}','Computer Science',2,'${role === "unverified" ? "unverified" : "verified"}');`).join("\n")}
+insert into public.profiles(user_id,full_name,roll_number,department,academic_year,verification_status,course,branch,section,mobile_number)
+values ('${account.id}','Integration ${role}','TEST${runId.toUpperCase()}${index}','Computer Science',2,'unverified',${role === "student" || role === "unverified" ? "null" : "'B.Tech'"},'CSE','A','9876543210');`).join("\n")}
 insert into public.admin_users(user_id,active) values ('${accounts.admin.id}',true);
 commit;`, "seed");
   console.log("Temporary live test accounts created. Running real browser and API workflows.");
@@ -64,7 +64,8 @@ commit;`, "seed");
 delete from public.registrations where user_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
 delete from public.audit_logs where entity_id in (select id from public.events where created_by='${accounts.admin.id}');
 delete from public.events where created_by='${accounts.admin.id}';
-delete from public.admin_users where user_id='${accounts.admin.id}';
+delete from public.admin_email_access where user_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
+delete from public.admin_users where user_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
 delete from public.profiles where user_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
 delete from public.audit_logs where actor_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")}) or entity_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
 delete from auth.users where id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});

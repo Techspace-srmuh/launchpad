@@ -26,8 +26,13 @@ export function IdentityProvider({ config, children }: { config: BrowserConfig |
     void client.auth.getSession().then(({ data, error: authError }) => {
       if (!active) return;
       setSession(data.session);
-      if (authError) setError(workflowError(authError));
+      if (authError) setError("Your sign-in session could not be restored. Please try signing in again.");
       setLoading(false);
+    }).catch(() => {
+      if (active) {
+        setError("Your sign-in session could not be restored. Please try signing in again.");
+        setLoading(false);
+      }
     });
     return () => { active = false; listener.subscription.unsubscribe(); };
   }, [client]);
@@ -49,7 +54,7 @@ export function IdentityProvider({ config, children }: { config: BrowserConfig |
     setError("");
     void Promise.all([
       client.from("profiles").select("*").eq("user_id", session.user.id).maybeSingle(),
-      client.rpc("is_admin"),
+      client.rpc("sync_admin_access"),
     ]).then(([profileResult, adminResult]) => {
       if (!active) return;
       if (profileResult.error || adminResult.error) setError(workflowError(profileResult.error || adminResult.error));

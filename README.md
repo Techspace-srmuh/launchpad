@@ -4,7 +4,7 @@
 
 TechSpace Launchpad is a planned event platform for one university club. It pairs a student experience for discovering and attending events with a separate admin experience for running them.
 
-> **Project status: Phase 1 complete; identity foundations and event workflows implemented for development.** MAIN now has profiles, admin authority, audited events and atomic registration with RLS. Both apps have functional event screens and development test-account access. Google sign-in, university verification policy and production admin provisioning remain deferred. The specification remains a draft pending stakeholder approval; this is not a launch-ready release.
+> **Project status: Phase 1 complete; identity and event workflows implemented for development.** MAIN has profiles, audited events, atomic registration and the applied onboarding/admin-access migration. The user has selected immediate eligibility after complete onboarding and admin-managed access. Google sign-in code is present, but MAIN's Google provider is currently disabled and real Google login remains unverified. The specification remains a draft pending stakeholder approval; this is not a launch-ready release.
 
 ## Product at a glance
 
@@ -26,12 +26,14 @@ These are release requirements; only the development capabilities listed below a
 
 ## Implemented development workflows
 
-- **Student:** real test-account sign-in, profile creation/editing, published-event browsing/details, registration and My Events.
-- **Admin:** backend-checked access, event creation/editing/publishing/closing/completing/cancelling and paginated participant views.
-- **Database:** normalized unique roll claims, unverified profiles by default, protected admin records, audit logs, RLS and transactional registration with capacity/duplicate checks.
+- **Student:** profile creation/editing, published-event browsing/details, registration and My Events. Onboarding collects name, registration number, course, branch, department, section, academic year and mobile number. Complete details give immediate eligibility; manual approval is not required.
+- **Admin:** backend-checked event operations and participant views, plus protected access management by exact registered email with an audited reason.
+- **Database:** normalized unique immutable roll claims, private profile data, protected admin records, audit logs, RLS and transactional registration with capacity/duplicate checks. Profile completion is distinct from institutional verification.
 - **Redis:** optional authenticated event-read cache implementation, with fresh visibility/version checks and database fallback. The Edge Function is deployed to MAIN; Redis provisioning and real Redis connectivity remain pending. See the [Redis runbook](docs/runbooks/redis-events.md).
 
-The `/account` email/password form exists only in development builds and uses real Supabase test users. It does not bypass database permissions or verify students. Production builds have no sign-in entry point until Google is connected. No demo accounts or credentials are bundled. QR attendance, announcements/email, materials, certificates and private questions are not implemented.
+The `/account` page supports Google sign-in for personal Gmail and university Google accounts. The university domain confirmed by the user is `stu.srmuviversity.ac.in`; it is not an eligibility restriction. MAIN's Google provider must be activated using the [Google setup runbook](docs/runbooks/google-auth.md) before the real flow works. Password test-account login remains development-only, uses real Supabase accounts and cannot bypass backend permissions. No demo credentials are bundled. QR attendance, announcements/email, materials, certificates and private questions remain later work.
+
+The initial authorized admin emails are `officialtechspaceclub@gmail.com` and `harutoxokura15@gmail.com`. Their backend authorizations are claimed only through matching confirmed Google identities; entering an email or changing profile metadata does not grant access. Existing admins can grant/revoke confirmed registered accounts from Control's Admin access screen. See the [policy decision](docs/decisions/005-student-onboarding-admin-access.md) for the data and security boundaries.
 
 ## Proposed stack and architecture
 
@@ -75,7 +77,7 @@ The diagram shows the planned flow. Project 2 credentials must remain server sid
 
 The repository separates `apps/student` and `apps/admin`, shared browser packages under `packages`, and the two backend projects under `supabase/main` and `supabase/certificates`. See the [folder architecture](docs/architecture.md) for every directory's responsibility and [phase.md](phase.md) for dependencies, deliverables and completion criteria.
 
-The user authorized event development before Google sign-in. Development uses real, explicitly provisioned test identities while production university verification and admin provisioning remain unresolved. See the [development access decision](docs/decisions/003-development-access.md). Email provider/queue decisions are required before Phase 5 delivery.
+The user originally authorized event development before Google sign-in, then selected the [onboarding and admin-access policy](docs/decisions/005-student-onboarding-admin-access.md). Personal Gmail is allowed and complete self-declared student details give immediate registration eligibility without approval. This does not establish university enrollment. Google provider activation remains pending. Email provider/queue decisions are required before Phase 5 delivery.
 
 ## Local development
 
@@ -138,6 +140,8 @@ With the Supabase CLI authenticated to the explicitly linked MAIN development pr
 
 ```sh
 supabase db query --linked --workdir supabase/main --file supabase/tests/identity_events.sql
+supabase db query --linked --workdir supabase/main --file supabase/tests/onboarding_admin_access.sql
+supabase db query --linked --workdir supabase/main --file supabase/tests/onboarding_admin_access.sql
 python supabase/main/supabase/tests/concurrency.py
 npm run test:live
 ```
@@ -148,7 +152,7 @@ Use `npm run build` to build both apps. Separate Next.js/Vercel deployment setti
 
 ## Open decisions
 
-- How student university identity will be verified and how admins will be provisioned.
+- Google OAuth activation, exact hosted callback origins and real student/admin Google login validation remain setup work; eligibility and admin-management policy are decided.
 - Which email provider and background worker will handle queued delivery, retries, and rate limits.
 - How private query attachments, certificate retention, data retention, and institutional consent will be handled.
 - Which TechSpace-owned domains and authorized visual assets will be used at public launch.
@@ -163,6 +167,8 @@ See the specification for suggested defaults and the point at which each decisio
 - [Phased delivery workflow](phase.md)
 - [Phase 1 implementation decisions](docs/decisions/001-phase-1-foundations.md)
 - [Next.js migration decision](docs/decisions/004-nextjs-migration.md)
+- [Student onboarding and admin-access decision](docs/decisions/005-student-onboarding-admin-access.md)
+- [Google sign-in setup](docs/runbooks/google-auth.md)
 - [Frontend deployment runbook](docs/runbooks/frontend-deployment.md)
 - [Supabase setup](docs/runbooks/supabase-setup.md)
 - [Database and event workflows](docs/runbooks/database-events.md)
