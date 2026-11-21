@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useIdentity, workflowError } from "@launchpad/supabase";
 import { Button } from "@launchpad/ui";
+import { ArrowUpRight, Image, FileText } from "lucide-react";
+import { AstronautDoodle } from "../components/space-doodles";
 
 interface Material { id: string; label: string; kind: "gallery" | "resource"; url: string }
 
@@ -33,16 +35,17 @@ export function StudentEventMaterials() {
     return () => { active = false; };
   }, [client, session, eventId, version]);
 
-  return <section className="workflow-section">
-    <Link href="/events">Back to events</Link><h1>Gallery & resources</h1>
-    <p>Links open externally. Access and sharing are controlled by the file or album owner; anyone-with-link materials can be forwarded.</p>
-    {loading ? <p role="status">Loading event links…</p> : error ? <p role="alert">{error}</p> : title === null ? <p>Event unavailable.</p> : <>
-      <h2>{title}</h2>
-      {!rows.length ? <p>No gallery or resource links have been published for this event yet.</p> : rows.map((row) => <article className="workflow-panel" key={row.id}>
-        <h3><a href={row.url} target="_blank" rel="noopener noreferrer">{row.label}</a></h3>
-        <p>{row.kind === "gallery" ? "Google Photos album" : "Resource"}</p>
-      </article>)}
+  return <section className="workflow-section materials-page">
+    <Link className="back-link" href={`/events/${eventId}`}>← Back to event</Link><span className="eyebrow">FROM THIS EVENT</span><h1>Gallery & resources</h1>
+    <p>Open albums and resources shared by TechSpace for this event.</p>
+    {loading ? <div className="workflow-panel state-panel" role="status">Loading event links…</div> : error ? <div className="workflow-panel state-panel"><p role="alert">{error}</p></div> : title === null ? <div className="workflow-panel state-panel"><h2>Event unavailable</h2><p>This event’s materials cannot be viewed.</p></div> : <>
+      <h2 className="materials-event-title">{title}</h2>
+      {!rows.length ? <div className="workflow-panel state-panel illustrated-state"><AstronautDoodle scene="resources" /><div><h2>No links yet</h2><p>Gallery and resource links will appear here when published.</p></div></div> : <div className="material-grid">{rows.map((row) => <article className="workflow-panel material-card" key={row.id}>
+        <span className="material-icon">{row.kind === "gallery" ? <Image size={23} aria-hidden="true" /> : <FileText size={23} aria-hidden="true" />}</span><span className="event-status">{row.kind === "gallery" ? "Gallery" : "Resource"}</span>
+        <h3>{row.label}</h3><a href={row.url} target="_blank" rel="noopener noreferrer">Open link <ArrowUpRight size={16} /></a>
+      </article>)}</div>}
     </>}
+    <p className="external-link-note">Links open externally. Access and sharing are controlled by the file or album owner; anyone-with-link materials can be forwarded.</p>
     <Button variant="outline" disabled={loading} onClick={() => setVersion((v) => v + 1)}>Refresh links</Button>
   </section>;
 }

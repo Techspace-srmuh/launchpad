@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 const surfaces = [
-  { name: "student", origin: "http://127.0.0.1:5183" },
-  { name: "admin", origin: "http://127.0.0.1:5184" },
+  { name: "student", origin: "http://127.0.0.1:5173" },
+  { name: "admin", origin: "http://127.0.0.1:5174" },
 ] as const;
 
 for (const surface of surfaces) {
@@ -19,9 +19,11 @@ for (const surface of surfaces) {
     await page.goto(surface.origin);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.getByRole("status")).toContainText("Setup needed");
-    await expect(page.getByRole("navigation")).toBeVisible();
+    const studentMobile = surface.name === "student" && (page.viewportSize()?.width ?? 0) <= 700;
+    await expect(page.getByRole("navigation", { name: studentMobile ? "Mobile navigation" : "Main navigation" })).toBeVisible();
 
-    await page.getByRole("navigation").getByRole("link", { name: "Setup", exact: true }).click();
+    if (studentMobile) await page.getByRole("link", { name: /View setup/ }).click();
+    else await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Setup", exact: true }).click();
     await expect(page).toHaveURL(`${surface.origin}/setup`);
     await expect(page.getByText("NEXT_PUBLIC_MAIN_SUPABASE_URL is required.", { exact: true })).toBeVisible();
     await page.reload();
@@ -52,10 +54,16 @@ for (const surface of surfaces) {
       await expect(page.getByRole("heading", { name: "Setup needed", exact: true })).toBeVisible();
     }
     await page.goto(`${surface.origin}/setup`);
-    await expect(page.getByRole("navigation").getByRole("link", { name: "Setup", exact: true })).toHaveAttribute("aria-current", "page");
-    await page.getByRole("navigation").getByRole("link", { name: "Account", exact: true }).click();
+    const studentMobile = surface.name === "student" && (page.viewportSize()?.width ?? 0) <= 700;
+    if (studentMobile) {
+      await expect(page.getByRole("heading", { name: /Prepare your/ })).toBeVisible();
+      await page.goto(`${surface.origin}/account`);
+    } else {
+      await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Setup", exact: true })).toHaveAttribute("aria-current", "page");
+      await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Account", exact: true }).click();
+    }
     await expect(page).toHaveURL(`${surface.origin}/account`);
-    await expect(page.getByRole("heading", { name: "Account", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: surface.name === "student" ? /One sign in/ : "Account" })).toBeVisible();
     await page.goBack();
     await expect(page).toHaveURL(`${surface.origin}/setup`);
     await page.reload();
@@ -63,3 +71,17 @@ for (const surface of surfaces) {
     expect(errors).toEqual([]);
   });
 }
+
+test("student: welcome flow reaches account on mobile and desktop", async ({ page }) => {
+  await page.goto("http://127.0.0.1:5173/");
+  await page.getByRole("link", { name: /Get started/ }).click();
+  await expect(page).toHaveURL("http://127.0.0.1:5173/welcome");
+  await expect(page.getByRole("heading", { name: /Your next idea starts here/ })).toBeVisible();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.getByRole("heading", { name: /Discover. Join./ })).toBeVisible();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.getByRole("heading", { name: /Show up and/ })).toBeVisible();
+  await page.getByRole("link", { name: /Get started/ }).click();
+  await expect(page).toHaveURL("http://127.0.0.1:5173/account");
+  await expect(page.getByRole("heading", { name: /One sign in/ })).toBeVisible();
+});

@@ -359,7 +359,7 @@ export function AttendanceScanner() {
               className={`scan-result-card ${scanResult.success ? "scan-result-success" : "scan-result-error"}`}
               role={scanResult.success ? "status" : "alert"}
             >
-              <strong>{scanResult.success ? "✓ Check-in recorded" : "Scan rejected"}</strong>
+              <strong>{scanResult.success ? "Check-in recorded" : "Scan rejected"}</strong>
               <p>{scanResult.message}</p>
             </div>
           )}

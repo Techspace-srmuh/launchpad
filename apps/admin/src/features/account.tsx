@@ -116,13 +116,13 @@ export function ProfilePage() {
     <p>Complete your details once to register for events immediately. No manual university approval is required. These are self-declared details.</p>
     <form key={profile?.user_id ?? "new"} onSubmit={(event) => void save(event)} className="workflow-form">
       <label>Full name<input name="full_name" autoComplete="name" required maxLength={120} defaultValue={profile?.full_name ?? ""} /></label>
-      <label>Registration number<input name="roll_number" required maxLength={40} readOnly={Boolean(profile)} defaultValue={profile?.roll_number ?? ""} /></label>
-      {profile && <p>Your claimed registration number cannot be changed here.</p>}
+      <label>Registration number<input name="roll_number" required maxLength={40} readOnly={Boolean(profile?.roll_number)} defaultValue={profile?.roll_number ?? ""} /></label>
+      {profile?.roll_number && <p>Your claimed registration number cannot be changed here.</p>}
       <label>Course<input name="course" required maxLength={120} placeholder="For example, B.Tech" defaultValue={profile?.course ?? ""} /></label>
       <label>Branch<input name="branch" required maxLength={120} placeholder="For example, Computer Science" defaultValue={profile?.branch ?? ""} /></label>
       <label>Department<input name="department" required maxLength={120} defaultValue={profile?.department ?? ""} /></label>
       <label>Section<input name="section" required maxLength={40} defaultValue={profile?.section ?? ""} /></label>
-      <label>Academic year<input name="academic_year" type="number" min="1" max="8" required defaultValue={profile?.academic_year ?? 1} /></label>
+      <label>Current year of study<select name="academic_year" required defaultValue={profile?.academic_year ?? ""}><option value="" disabled>Select your current year</option>{Array.from({ length: 8 }, (_, index) => { const year = index + 1; const suffix = year === 1 ? "st" : year === 2 ? "nd" : year === 3 ? "rd" : "th"; return <option key={year} value={year}>{year}{suffix} year</option>; })}</select></label>
       <label>Mobile number<input name="mobile_number" type="tel" autoComplete="tel" required maxLength={30} aria-describedby="mobile-help" defaultValue={profile?.mobile_number ?? ""} /></label><p id="mobile-help">Use 10–15 digits, with an optional country code such as +91.</p>
       <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save profile"}</Button>
     </form>

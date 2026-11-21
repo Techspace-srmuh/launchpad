@@ -130,6 +130,19 @@ code { padding: 2px 5px; border: 1px solid rgba(178,185,214,.12); border-radius:
 .table-scroll { max-width: 100%; overflow-x: auto; }
 .table-scroll table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .table-scroll th, .table-scroll td { padding: 12px; border-bottom: 1px solid #303a53; text-align: left; }
+
+/* Dashboard metrics & status styles */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 16px; margin: 20px 0; }
+.stat-card { padding: 18px 20px; border: 1px solid rgba(176,185,220,.18); border-radius: 12px; background: #111728; display: flex; flex-direction: column; }
+.stat-number { font-size: 32px; font-weight: 700; color: #a48aff; margin: 6px 0 4px; line-height: 1.1; }
+.stat-label { font-size: 11px; font-weight: 650; color: #9aa5b9; text-transform: uppercase; letter-spacing: 0.08em; }
+.stat-sub { font-size: 12px; color: #78849f; margin-top: auto; }
+.status-present { border-color: rgba(114,207,172,.4); color: #72cfac; background: rgba(53,138,110,.15); }
+.status-registered { border-color: rgba(132,182,236,.4); color: #91b8ed; background: rgba(74,126,185,.15); }
+.profile-alert { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border: 1px solid rgba(223,167,104,.3); border-radius: 10px; background: rgba(223,167,104,.1); margin: 18px 0; }
+.profile-alert strong { display: block; color: #e8c499; font-size: 13px; font-weight: 600; }
+.profile-alert p { margin: 2px 0 0; color: #c4b5a0; font-size: 12px; }
+
 @media (max-width: 700px) {
   .topbar { height: auto; }
   .topbar-inner { flex-wrap: wrap; padding-top: 12px; }

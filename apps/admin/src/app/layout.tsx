@@ -4,7 +4,7 @@ import { AppShell } from "../components/shell";
 import "../index.css";
 
 export const metadata: Metadata = { title: "Launchpad Control - TechSpace", description: "Launchpad Control — TechSpace event operations." };
-export const viewport: Viewport = { themeColor: "#080b16" };
+export const viewport: Viewport = { themeColor: "#f8f7f2" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return <html lang="en"><body><AppShell>{children}</AppShell></body></html>;

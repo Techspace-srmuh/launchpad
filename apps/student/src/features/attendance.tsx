@@ -103,7 +103,7 @@ export function StudentEventQr({ eventId }: { eventId: string }) {
           <div className="attendance-status">
             {attendance && attendance.checked_in ? (
               <p className="status-badge status-badge-checked-in">
-                ✓ Checked in at {new Date(attendance.checked_at).toLocaleTimeString()}
+                Checked in at {new Date(attendance.checked_at).toLocaleTimeString()}
               </p>
             ) : attendance && !attendance.checked_in ? (
               <p className="status-badge status-badge-not-checked-in">

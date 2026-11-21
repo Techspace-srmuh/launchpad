@@ -5,14 +5,15 @@ const ci = Boolean(process.env.CI);
 export default defineConfig({
   testDir: "./tests/e2e",
   outputDir: "./test-results/e2e",
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: ci ? 2 : 1,
   forbidOnly: ci,
   retries: ci ? 1 : 0,
   timeout: 60_000,
   expect: { timeout: 15_000 },
   reporter: ci ? "github" : "list",
   use: {
-    baseURL: "http://127.0.0.1:5183",
+    baseURL: "http://127.0.0.1:5173",
     trace: "retain-on-failure",
   },
   projects: [
@@ -33,16 +34,16 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "npm --workspace apps/student run dev -- --port 5183",
+      command: "npm --workspace apps/student run dev",
       env: { NEXT_PUBLIC_MAIN_SUPABASE_URL: "", NEXT_PUBLIC_MAIN_SUPABASE_PUBLISHABLE_KEY: "" },
-      url: "http://127.0.0.1:5183",
+      url: "http://127.0.0.1:5173",
       reuseExistingServer: !ci,
       timeout: 120_000,
     },
     {
-      command: "npm --workspace apps/admin run dev -- --port 5184",
+      command: "npm --workspace apps/admin run dev",
       env: { NEXT_PUBLIC_MAIN_SUPABASE_URL: "", NEXT_PUBLIC_MAIN_SUPABASE_PUBLISHABLE_KEY: "" },
-      url: "http://127.0.0.1:5184",
+      url: "http://127.0.0.1:5174",
       reuseExistingServer: !ci,
       timeout: 120_000,
     },

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useIdentity, workflowError } from "@launchpad/supabase";
 import { Button } from "@launchpad/ui";
+import { Bell, ArrowUpRight } from "lucide-react";
+import { AstronautDoodle } from "../components/space-doodles";
 
 interface Announcement {
   id: string;
@@ -38,15 +40,15 @@ export function StudentAnnouncements() {
       }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [client, session, page, version]);
-  return <section className="workflow-section">
-    <div className="workflow-heading"><h1>Announcements</h1><Button variant="outline" onClick={() => setVersion((value) => value + 1)}>Refresh announcements</Button></div>
-    <p>Club notices and updates for your registered events appear here. Drive sharing permissions apply when opening external documents.</p>
-    {loading ? <p role="status">Loading announcements…</p> : error ? <p role="alert">{error}</p> : !rows.length ? <p>No announcements on this page yet.</p> : <div className="event-grid">{rows.map((row) => <article className="workflow-panel" key={row.id}>
-      <span className="event-status">{row.audience === "all_students" ? "All students" : "Event registrants"}</span>
+  return <section className="workflow-section announcements-page">
+    <div className="workflow-heading"><div><span className="eyebrow">IN THE LOOP</span><h1>Announcements</h1><p>Club news and updates for your events.</p></div><Button variant="outline" onClick={() => setVersion((value) => value + 1)}>Refresh</Button></div>
+    {loading ? <div className="workflow-panel state-panel" role="status">Loading announcements…</div> : error ? <div className="workflow-panel state-panel"><p role="alert">{error}</p><Button variant="outline" onClick={() => setVersion((value) => value + 1)}>Retry</Button></div> : !rows.length ? <div className="workflow-panel state-panel illustrated-state"><AstronautDoodle scene="megaphone" /><div><h2>No announcements yet</h2><p>Updates from TechSpace and the events you join will appear here.</p></div></div> : <div className="event-grid announcement-grid">{rows.map((row) => <article className="workflow-panel announcement-card" key={row.id}>
+      <div className="announcement-card-top"><span className="event-status">{row.audience === "all_students" ? "All students" : "Event registrants"}</span><Bell size={18} aria-hidden="true" /></div>
       <h2>{row.title}</h2><p><time dateTime={row.published_at}>{new Date(row.published_at).toLocaleString()}</time></p>
       <p className="event-description">{row.body}</p>
-      <div className="workflow-actions">{row.event_id && <Link href={`/events/${row.event_id}`}>View event</Link>}{row.link_url && <a href={row.link_url} target="_blank" rel="noopener noreferrer">Open linked resource</a>}</div>
+      <div className="workflow-actions">{row.event_id && <Link href={`/events/${row.event_id}`}>View event</Link>}{row.link_url && <a href={row.link_url} target="_blank" rel="noopener noreferrer">Open linked resource <ArrowUpRight size={15} /></a>}</div>
     </article>)}</div>}
+    <p className="external-link-note">External Drive and album links use the sharing permissions set by their owners.</p>
     {!loading && !error && (page > 0 || rows.length === 50) && <div className="workflow-actions"><Button variant="outline" disabled={page === 0} onClick={() => setPage((value) => value - 1)}>Previous page</Button><span>Page {page + 1}</span><Button variant="outline" disabled={rows.length < 50} onClick={() => setPage((value) => value + 1)}>Next page</Button></div>}
   </section>;
 }

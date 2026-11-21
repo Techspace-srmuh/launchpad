@@ -31,3 +31,6 @@ out/
 next-env.d.ts
 
 .vercel/
+
+# Local design references attached to Codex conversations
+.codex-attachments/

@@ -6,10 +6,10 @@ import { usePathname } from "next/navigation";
 import type { ComponentProps } from "react";
 import type { ReactNode } from "react";
 import { Button, cn } from "@launchpad/ui";
-import { IdentityProvider } from "@launchpad/supabase";
-
+import { IdentityProvider, useIdentity } from "@launchpad/supabase";
 
 import { browserConfig } from "../lib/config";
+import { AdminDashboard } from "../features/dashboard";
 
 function NavLink({ href, className, ...props }: ComponentProps<typeof Link>) {
   const pathname = usePathname();
@@ -34,19 +34,57 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 export function OverviewPage() {
-  return <>
-    <SetupNotice />
-    <section className="welcome-row"><div><span className="eyebrow"><Orbit size={14} /> CONTROL ROOM</span><h1>Good work starts<br /><span>with a clear view.</span></h1><p>One calm place to organize the TechSpace events your community shows up for.</p></div><div className="welcome-orbit" aria-hidden="true"><span className="orbit-core"><Orbit size={25} /></span><i /><b /></div></section>
-    <section className="status-panel" aria-label="Dashboard connection status"><div className="status-panel-heading"><div><span className="eyebrow muted-eyebrow">WORKSPACE STATUS</span><h2>Manage your events.</h2></div><span className="not-live-pill"><span />EVENT WORKFLOWS</span></div><p>Authorized admins can now create events, publish registration windows, and review participant records. Attendance and announcements are later workflows.</p><div className="status-empty"><span className="empty-glyph"><Activity size={21} /></span><strong>Open event management</strong><span>Sign in with an authorized account to see real events and registrations.</span></div><Button asChild><Link href="/events">Manage events <ArrowRight size={16} /></Link></Button></section>
-    <section className="content-section" aria-labelledby="tools-heading"><div className="section-heading"><div><span className="eyebrow muted-eyebrow">OPERATIONS</span><h2 id="tools-heading">Tools for the work ahead.</h2></div><span className="section-side-note">Planned admin workflows will connect here as they’re built.</span></div>
-      <div className="tool-grid">
-        <article className="tool-card"><span className="tool-icon violet"><CalendarDays size={18} /></span><span className="tool-status">PLANNED</span><h3>Events & registrations</h3><p>Create an event, manage details, and review its participant list.</p><span className="tool-foot">EVENT OPERATIONS <ArrowUpRight size={14} /></span></article>
-        <article className="tool-card"><span className="tool-icon cyan"><ScanLine size={18} /></span><span className="tool-status">PLANNED</span><h3>Attendance</h3><p>Check in registered attendees with event specific QR credentials.</p><span className="tool-foot">CHECK-IN <ArrowUpRight size={14} /></span></article>
-        <article className="tool-card"><span className="tool-icon mint"><Bell size={18} /></span><span className="tool-status">PLANNED</span><h3>Announcements</h3><p>Share event updates and resources with the right audience.</p><span className="tool-foot">COMMUNITY UPDATES <ArrowUpRight size={14} /></span></article>
-      </div>
-    </section>
-    <div className="security-note"><LockKeyhole size={16} /><span>Admin access requires a protected server-side role. Open Events to create and publish events using an authorized account.</span><Link href="/setup" aria-label="Open setup"><ArrowRight size={16} /></Link></div>
-  </>;
+  const { session, isAdmin } = useIdentity();
+  return (
+    <>
+      <SetupNotice />
+      {session && isAdmin ? (
+        <AdminDashboard />
+      ) : session && !isAdmin ? (
+        <section className="workflow-panel">
+          <h1>Admin access required</h1>
+          <p>This account ({session.user.email}) is not authorized for admin operations.</p>
+          <div className="workflow-actions">
+            <Link href="/account">Open account</Link>
+          </div>
+        </section>
+      ) : (
+        <>
+          <section className="welcome-row">
+            <div>
+              <span className="eyebrow"><Orbit size={14} /> CONTROL ROOM</span>
+              <h1>Good work starts<br /><span>with a clear view.</span></h1>
+              <p>One calm place to organize the TechSpace events your community shows up for.</p>
+            </div>
+            <div className="welcome-orbit" aria-hidden="true"><img src="/doodles/01_astronaut_coding_on_moon.png" alt="" /><i /><b /></div>
+          </section>
+          <section className="status-panel" aria-label="Dashboard connection status">
+            <div className="status-panel-heading">
+              <div>
+                <span className="eyebrow muted-eyebrow">WORKSPACE ACCESS</span>
+                <h2>Sign in to Launchpad Control</h2>
+              </div>
+              <span className="not-live-pill"><span />ADMIN OPERATIONS</span>
+            </div>
+            <p>Authorized admins can create and publish events, track attendee check-ins via QR scanning, and manage club announcements.</p>
+            <div className="workflow-actions">
+              <Button asChild><Link href="/account">Sign in <ArrowRight size={16} /></Link></Button>
+              <Button asChild variant="outline"><Link href="/setup">View setup</Link></Button>
+            </div>
+          </section>
+          <section className="content-section" aria-labelledby="tools-heading">
+            <div className="section-heading"><div><span className="eyebrow muted-eyebrow">OPERATIONS</span><h2 id="tools-heading">Tools for the work ahead.</h2></div><span className="section-side-note">Core admin operations in TechSpace Launchpad.</span></div>
+            <div className="tool-grid">
+              <article className="tool-card"><span className="tool-icon violet"><CalendarDays size={18} /></span><span className="tool-status">ACTIVE</span><h3>Events & registrations</h3><p>Create an event, manage details, and review its participant list.</p><span className="tool-foot"><Link href="/events">EVENT OPERATIONS <ArrowUpRight size={14} /></Link></span></article>
+              <article className="tool-card"><span className="tool-icon cyan"><ScanLine size={18} /></span><span className="tool-status">ACTIVE</span><h3>Attendance</h3><p>Check in registered attendees with event-specific QR credentials.</p><span className="tool-foot"><Link href="/events">CHECK-IN <ArrowUpRight size={14} /></Link></span></article>
+              <article className="tool-card"><span className="tool-icon mint"><Bell size={18} /></span><span className="tool-status">ACTIVE</span><h3>Announcements</h3><p>Share event updates and resources with the right audience.</p><span className="tool-foot"><Link href="/announcements">COMMUNITY UPDATES <ArrowUpRight size={14} /></Link></span></article>
+            </div>
+          </section>
+          <div className="security-note"><LockKeyhole size={16} /><span>Admin access requires a protected server-side role. Sign in with an authorized Google or admin account to access the control room.</span><Link href="/setup" aria-label="Open setup"><ArrowRight size={16} /></Link></div>
+        </>
+      )}
+    </>
+  );
 }
 
 export function SetupPage() {

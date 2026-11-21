@@ -1,15 +1,16 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, ArrowUpRight, Bell, CalendarDays, CircleHelp, Compass, Orbit, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, Bookmark, CalendarDays, CircleHelp, Compass, Orbit, Search, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentProps } from "react";
 import type { ReactNode } from "react";
 import { Button, cn } from "@launchpad/ui";
-import { IdentityProvider } from "@launchpad/supabase";
-
+import { IdentityProvider, useIdentity } from "@launchpad/supabase";
 
 import { browserConfig } from "../lib/config";
+import { StudentDashboard } from "../features/dashboard";
+import { AstronautDoodle } from "./space-doodles";
 
 function NavLink({ href, className, ...props }: ComponentProps<typeof Link>) {
   const pathname = usePathname();
@@ -18,7 +19,7 @@ function NavLink({ href, className, ...props }: ComponentProps<typeof Link>) {
 }
 
 function Brand() {
-  return <Link href="/" className="brand" aria-label="Launchpad home"><span className="brand-mark"><Orbit size={18} /></span><span>launchpad<span className="brand-dot">.</span></span></Link>;
+  return <Link href="/" className="brand" aria-label="TechSpace Launchpad home"><span className="brand-mark"><AstronautDoodle scene="planet" className="brand-planet" /></span><span className="brand-words"><strong>TechSpace</strong><span>Launchpad</span></span></Link>;
 }
 
 function SetupNotice() {
@@ -32,47 +33,50 @@ function SetupNotice() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  if (pathname === "/welcome") {
+    return <IdentityProvider config={browserConfig.ok ? browserConfig.config : null}><div className="welcome-shell">{children}</div></IdentityProvider>;
+  }
   return (
     <IdentityProvider config={browserConfig.ok ? browserConfig.config : null}><div className="app-shell">
       <header className="topbar">
         <div className="topbar-inner"><Brand />
           <nav className="main-nav" aria-label="Main navigation">
             <NavLink href="/" aria-label="Home" className="nav-link"><Compass size={16} />Home</NavLink>
-            <NavLink href="/events" aria-label="Events" className="nav-link"><CalendarDays size={16} />Events</NavLink><NavLink href="/my-events" aria-label="My events" className="nav-link"><Orbit size={16} />My events</NavLink><NavLink href="/profile" aria-label="Profile" className="nav-link"><Compass size={16} />Profile</NavLink><NavLink href="/announcements" aria-label="Announcements" className="nav-link"><Bell size={16} />Announcements</NavLink><NavLink href="/account" aria-label="Account" className="nav-link"><Orbit size={16} />Account</NavLink><NavLink href="/setup" aria-label="Setup" className="nav-link"><CircleHelp size={16} />Setup</NavLink>
+            <NavLink href="/events" aria-label="Events" className="nav-link"><CalendarDays size={17} />Explore Events</NavLink><NavLink href="/my-events" aria-label="My events" className="nav-link"><Bookmark size={17} />My Events</NavLink><NavLink href="/announcements" aria-label="Announcements" className="nav-link"><Bell size={17} />Announcements</NavLink><NavLink href="/profile" aria-label="Profile" className="nav-link"><UserRound size={17} />Profile</NavLink><NavLink href="/account" aria-label="Account" className="nav-link"><UserRound size={17} />Account</NavLink><NavLink href="/setup" aria-label="Setup" className="nav-link"><CircleHelp size={17} />Setup</NavLink>
           </nav>
-          <div className="topbar-meta"><span className="role-chip"><span />Student space</span><span className="avatar-placeholder" aria-label="Student app">S</span></div>
+          <div className="topbar-meta"><NavLink href="/announcements" className="header-icon-link" aria-label="Announcements"><Bell size={23} /></NavLink><NavLink href="/account" className="header-icon-link header-account-link" aria-label="Account"><UserRound size={23} /></NavLink></div>
         </div>
       </header>
       <main className="page-wrap">{children}</main>
+      <nav className="mobile-nav" aria-label="Mobile navigation">
+        <NavLink href="/" className="mobile-nav-link"><Compass size={23} />Home</NavLink>
+        <NavLink href="/events" className="mobile-nav-link"><CalendarDays size={23} />Events</NavLink>
+        <NavLink href="/my-events" className="mobile-nav-link"><Bookmark size={23} />My Events</NavLink>
+        <NavLink href="/profile" className="mobile-nav-link"><UserRound size={23} />Profile</NavLink>
+      </nav>
       <footer className="site-footer"><span>TechSpace | Launchpad</span><span>Your universe. Your events. Your community.</span></footer>
     </div></IdentityProvider>
   );
 }
 
 export function HomePage() {
-  return <>
-    <SetupNotice />
-    <section className="hero-panel">
-      <div className="hero-grid" aria-hidden="true"><span className="planet planet-one" /><span className="planet planet-two" /><span className="orbit-line" /></div>
-      <div className="hero-copy">
-        <span className="eyebrow"><Sparkles size={14} /> YOUR CAMPUS, IN ORBIT</span>
-        <h1>Make room for<br /><span>what’s next.</span></h1>
-        <p>Your home for TechSpace events, people, and the moments worth showing up for.</p>
-        <div className="hero-actions"><Button asChild><Link href="/events">Explore events <ArrowRight size={16} /></Link></Button><span className="quiet-note">Sign in to browse and register for published events.</span></div>
-      </div>
-      <div className="hero-index"><span>01</span><span className="index-rule" /><span>YOUR LAUNCHPAD</span></div>
-    </section>
-
-    <section className="content-section" aria-labelledby="next-heading">
-      <div className="section-heading"><div><span className="eyebrow muted-eyebrow">THE NEXT STOPS</span><h2 id="next-heading">Your campus, coming together.</h2></div><span className="section-side-note">A first look at what Launchpad will bring into one place.</span></div>
-      <div className="feature-grid">
-        <article className="feature-card feature-card-highlight"><span className="feature-icon violet"><CalendarDays size={19} /></span><span className="status-pill">PLANNED</span><h3>Find your people</h3><p>Discover upcoming TechSpace events and keep the ones you’re joining close.</p><span className="feature-foot">EVENTS & REGISTRATION <ArrowUpRight size={14} /></span></article>
-        <article className="feature-card"><span className="feature-icon blue"><Orbit size={19} /></span><span className="status-pill">PLANNED</span><h3>Keep your moments</h3><p>See your event details, attendance, and the resources shared with you.</p><span className="feature-foot">YOUR EVENT RECORD <ArrowUpRight size={14} /></span></article>
-        <article className="feature-card"><span className="feature-icon mint"><Sparkles size={19} /></span><span className="status-pill">PLANNED</span><h3>Stay in the loop</h3><p>Read event announcements and find the links that matter, all in one place.</p><span className="feature-foot">UPDATES & RESOURCES <ArrowUpRight size={14} /></span></article>
-      </div>
-    </section>
-    <section className="quiet-banner"><div className="quiet-banner-icon"><Compass size={18} /></div><div><strong>A clear start, with more on the horizon.</strong><span>Event records use the shared MAIN project. Google sign-in is still being prepared.</span></div><Link href="/setup" aria-label="Open setup page"><ArrowRight size={18} /></Link></section>
-  </>;
+  const { session } = useIdentity();
+  return (
+    <>
+      <SetupNotice />
+      {session ? (
+        <StudentDashboard />
+      ) : (
+        <div className="reference-public-home">
+          <section className="reference-intro" aria-labelledby="public-greeting"><div className="reference-intro-copy"><span className="reference-kicker">YOUR TECHSPACE UNIVERSE</span><h1 id="public-greeting">Hey, <span>Explorer!</span></h1><p>Discover events, build, learn<br />and be a part of TechSpace.</p></div><AstronautDoodle scene="coding" className="reference-intro-art" priority /></section>
+          <Link className="reference-search" href="/events"><Search size={23} aria-hidden="true" /><span>Search events, workshops, hackathons...</span><ArrowRight size={19} aria-hidden="true" /></Link>
+          <nav className="reference-quick-nav" aria-label="Quick links"><Link className="reference-quick-card reference-quick-card-active" href="/events"><CalendarDays size={30} aria-hidden="true" /><span>All Events</span></Link><Link className="reference-quick-card" href="/my-events"><Bookmark size={30} aria-hidden="true" /><span>My Events</span></Link><Link className="reference-quick-card" href="/announcements"><Bell size={30} aria-hidden="true" /><span>Updates</span></Link><Link className="reference-quick-card" href="/profile"><UserRound size={30} aria-hidden="true" /><span>Profile</span></Link></nav>
+          <section className="reference-public-card"><span className="reference-featured-pill">START HERE</span><h2>Your place for every TechSpace moment.</h2><p>Sign in to register, keep your QR pass, and see club updates.</p><Button asChild><Link href="/welcome">Get started <ArrowRight size={18} /></Link></Button></section>
+        </div>
+      )}
+    </>
+  );
 }
 
 export function SetupPage() {
