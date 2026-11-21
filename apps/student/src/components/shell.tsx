@@ -1,15 +1,16 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Bell, Bookmark, CalendarDays, CircleHelp, Compass, Orbit, Search, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, Bookmark, CalendarDays, CircleHelp, Compass, Orbit, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentProps } from "react";
 import type { ReactNode } from "react";
 import { Button, cn } from "@launchpad/ui";
-import { IdentityProvider, useIdentity } from "@launchpad/supabase";
+import { IdentityProvider, isProfileComplete, useIdentity } from "@launchpad/supabase";
 
 import { browserConfig } from "../lib/config";
 import { StudentDashboard } from "../features/dashboard";
+import { OnboardingPage } from "../features/onboarding";
 import { AstronautDoodle } from "./space-doodles";
 
 function NavLink({ href, className, ...props }: ComponentProps<typeof Link>) {
@@ -33,12 +34,17 @@ function SetupNotice() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  return <IdentityProvider config={browserConfig.ok ? browserConfig.config : null}><StudentShell>{children}</StudentShell></IdentityProvider>;
+}
+
+function StudentShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  if (pathname === "/welcome") {
-    return <IdentityProvider config={browserConfig.ok ? browserConfig.config : null}><div className="welcome-shell">{children}</div></IdentityProvider>;
+  const { session, profile, loading } = useIdentity();
+  if (pathname === "/welcome" || pathname === "/account" || (pathname === "/" && !session) || (pathname === "/profile" && !isProfileComplete(profile))) {
+    return <main className="onboarding-shell">{loading && pathname !== "/account" ? <p className="onboarding-loading" role="status">Getting your Launchpad ready…</p> : children}</main>;
   }
   return (
-    <IdentityProvider config={browserConfig.ok ? browserConfig.config : null}><div className="app-shell">
+    <div className="app-shell">
       <header className="topbar">
         <div className="topbar-inner"><Brand />
           <nav className="main-nav" aria-label="Main navigation">
@@ -56,27 +62,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         <NavLink href="/profile" className="mobile-nav-link"><UserRound size={23} />Profile</NavLink>
       </nav>
       <footer className="site-footer"><span>TechSpace | Launchpad</span><span>Your universe. Your events. Your community.</span></footer>
-    </div></IdentityProvider>
+    </div>
   );
 }
 
 export function HomePage() {
   const { session } = useIdentity();
-  return (
-    <>
-      <SetupNotice />
-      {session ? (
-        <StudentDashboard />
-      ) : (
-        <div className="reference-public-home">
-          <section className="reference-intro" aria-labelledby="public-greeting"><div className="reference-intro-copy"><span className="reference-kicker">YOUR TECHSPACE UNIVERSE</span><h1 id="public-greeting">Hey, <span>Explorer!</span></h1><p>Discover events, build, learn<br />and be a part of TechSpace.</p></div><AstronautDoodle scene="coding" className="reference-intro-art" priority /></section>
-          <Link className="reference-search" href="/events"><Search size={23} aria-hidden="true" /><span>Search events, workshops, hackathons...</span><ArrowRight size={19} aria-hidden="true" /></Link>
-          <nav className="reference-quick-nav" aria-label="Quick links"><Link className="reference-quick-card reference-quick-card-active" href="/events"><CalendarDays size={30} aria-hidden="true" /><span>All Events</span></Link><Link className="reference-quick-card" href="/my-events"><Bookmark size={30} aria-hidden="true" /><span>My Events</span></Link><Link className="reference-quick-card" href="/announcements"><Bell size={30} aria-hidden="true" /><span>Updates</span></Link><Link className="reference-quick-card" href="/profile"><UserRound size={30} aria-hidden="true" /><span>Profile</span></Link></nav>
-          <section className="reference-public-card"><span className="reference-featured-pill">START HERE</span><h2>Your place for every TechSpace moment.</h2><p>Sign in to register, keep your QR pass, and see club updates.</p><Button asChild><Link href="/welcome">Get started <ArrowRight size={18} /></Link></Button></section>
-        </div>
-      )}
-    </>
-  );
+  return session ? <><SetupNotice /><StudentDashboard /></> : <OnboardingPage />;
 }
 
 export function SetupPage() {

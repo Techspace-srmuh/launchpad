@@ -8,13 +8,13 @@ for (const surface of [
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`${surface.origin}/account`);
-    await expect(page.getByRole("heading", { name: surface.name === "student" ? /One sign in/ : "Account" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: surface.name === "student" ? "Sign in to continue" : "Account" })).toBeVisible();
     await expect(page.getByLabel("Password", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Sign in", exact: true })).toHaveCount(0);
     // If this build has public backend settings, the Google entry point must
     // report provider setup failures in-app rather than pretending to sign in.
     const google = page.getByRole("button", { name: "Continue with Google", exact: true });
-    if (await google.count()) {
+    if (await google.count() && await google.isEnabled()) {
       await page.route("**/auth/v1/settings", (route) => route.fulfill({ json: { external: { google: false } } }));
       await google.click();
       await expect(page.getByRole("main").getByRole("alert")).toContainText("Google sign-in is not configured yet.");

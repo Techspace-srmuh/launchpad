@@ -16,10 +16,12 @@ const adminOrigin = "http://127.0.0.1:5184";
 
 async function login(page: Page, origin: string, account: Account) {
   await page.goto(`${origin}/account`);
+  const emailOption = page.getByRole("button", { name: /Continue with Email/ });
+  if (origin === studentOrigin) await emailOption.click();
   await page.getByLabel("Email", { exact: true }).fill(account.email);
   await page.getByLabel("Password", { exact: true }).fill(account.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Sign out", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign out", exact: true }).or(page.getByRole("heading", { name: "Complete your profile", exact: true }))).toBeVisible();
 }
 
 test("dashboard notices enforce audience isolation and share one OD link without sending email", async ({ browser }) => {
@@ -146,7 +148,7 @@ test("dashboard notices enforce audience isolation and share one OD link without
     await expect(otherPage.getByRole("heading", { name: "Admin access required", exact: true })).toBeVisible();
     await studentPage.goto(`${studentOrigin}/account`);
     await studentPage.getByRole("button", { name: "Sign out", exact: true }).click();
-    await expect(studentPage.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+    await expect(studentPage.getByRole("button", { name: "Continue with Google", exact: true })).toBeVisible();
     await studentPage.goto(`${studentOrigin}/announcements`);
     await expect(studentPage.getByRole("heading", { name: "Sign in required", exact: true })).toBeVisible();
     expect(diagnostics.pageErrors).toBe(0);

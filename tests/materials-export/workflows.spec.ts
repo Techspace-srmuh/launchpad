@@ -25,10 +25,11 @@ async function authenticated(account: Account) {
 }
 async function login(page: Page, origin: string, account: Account) {
   await page.goto(`${origin}/account`);
-  await page.getByRole("button", { name: /^(Sign in|Sign out)$/ }).first().waitFor({ state: "visible" });
+  await page.getByRole("button", { name: /^(Sign in|Sign out|Continue with Email.*)$/ }).first().waitFor({ state: "visible" });
   if (await page.getByRole("button", { name: "Sign out", exact: true }).count()) {
     await page.getByRole("button", { name: "Sign out", exact: true }).click();
   }
+  if (origin === studentOrigin) await page.getByRole("button", { name: /Continue with Email/ }).click();
   await page.getByLabel("Email", { exact: true }).fill(account.email);
   await page.getByLabel("Password", { exact: true }).fill(account.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
