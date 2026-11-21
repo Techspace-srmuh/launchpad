@@ -15,6 +15,8 @@ The MAIN project is `amagfwugfinplxhkauig`. The certificate project remains sepa
 | `20261120060000_event_materials.sql` | Published event gallery/resource metadata, protected admin operations and visibility RLS |
 | `20261120070000_participant_export.sql` | Bounded filtered admin participant snapshots and audited export preparation |
 | `20261120080000_attendance_hardening.sql` | Role-change serialization, event status/registration validation and correction protection |
+| `20261120100000_announcement_email.sql` | Private campaign/job queue, protected personalized composition, audited retries and serialized worker leases; see email runbook for setup and verification |
+| `20261120101000_email_job_review.sql` | Current-admin-only paginated recipient status for reviewing failures and uncertain sends |
 
 All migrations were applied to linked MAIN on 20 November 2026. See [phase.md](../../phase.md) for validation evidence; application alone does not establish successful security checks. Files are under `supabase/main/supabase/migrations/`; extend shared database history with new migrations rather than rewriting applied files.
 

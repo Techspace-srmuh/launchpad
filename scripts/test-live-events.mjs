@@ -68,6 +68,8 @@ commit;`, "seed");
 delete from public.attendance where checked_by='${accounts.admin.id}' or user_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
 delete from public.qr_credentials where registration_id in (select id from public.registrations where user_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")}));
 delete from public.audit_logs where entity_id in (select id from public.announcements where published_by='${accounts.admin.id}');
+delete from public.audit_logs where entity_id in (select id from public.email_campaigns where announcement_id in (select id from public.announcements where published_by='${accounts.admin.id}'));
+delete from public.email_campaigns where announcement_id in (select id from public.announcements where published_by='${accounts.admin.id}');
 delete from public.announcements where published_by='${accounts.admin.id}';
 delete from public.registrations where user_id in (${Object.values(accounts).map(({ id }) => `'${id}'`).join(",")});
 delete from public.audit_logs where entity_id in (select id from public.events where created_by='${accounts.admin.id}');

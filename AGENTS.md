@@ -34,7 +34,7 @@ Use explicit MAIN/CERTIFICATES CLI working directories as described in the [Supa
 | Operational data | Project 1 PostgreSQL with row-level security |
 | Privileged operations | Authenticated Edge Functions or protected PostgreSQL RPC |
 | Certificates | Project 1 permanent metadata; Project 2 private template/PDF storage |
-| Email | External provider with queue, throttling, retry and status; provider/worker undecided |
+| Email | User-selected club Gmail SMTP, own Node/Nodemailer worker and private MAIN queue; batches of ten, no application daily cap; credentials/hosted operation/real send verification pending. See decision 006. |
 | Form factor | Responsive HTTPS web apps; student app installable as a PWA; mobile admin camera scanning |
 
 These are planned choices, not evidence of provisioned infrastructure. Do not assume free quotas, scheduling capabilities, or an email provider. Verify current provider limits when implementing integrations.
@@ -56,7 +56,7 @@ These are planned choices, not evidence of provisioned infrastructure. Do not as
 
 ## Handling unresolved decisions
 
-Consult section 15 of the specification. Student eligibility and admin provisioning policy are resolved by the user as recorded in decision 005; Google is enabled and the user reports successful login; comprehensive OAuth validation remains a release check. Cancellation policy, email provider/worker/sender, query attachments, certificate layout/retention/email policy, deployment branding, and institutional retention/consent remain unresolved.
+Consult section 15 of the specification. Student eligibility and admin provisioning policy are resolved by the user as recorded in decision 005; Google is enabled and the user reports successful login; comprehensive OAuth validation remains a release check. Email direction is resolved in decision 006: club Gmail, own worker, personalized individual messages in batches of ten, no application daily cap. Credentials, hosted operation and real-send verification remain pending. Cancellation policy, query attachments, certificate layout/retention/email policy, deployment branding, and institutional retention/consent remain unresolved.
 
 Do not silently turn suggested defaults into approved policy. Continue independent work where possible, record assumptions as proposals, and request the relevant decision before shipping dependent behavior. The proposed 30-day PDF retention is not an approved cleanup policy.
 

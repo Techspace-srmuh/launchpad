@@ -32,7 +32,7 @@ These are release requirements; only the development capabilities listed below a
 - **Database:** normalized unique immutable roll claims, private profile data, protected admin records, audit logs, RLS and transactional registration with capacity/duplicate checks. Profile completion is distinct from institutional verification.
 - **Materials:** event-specific Google Photos album and resource links, with admin editing, publication/order controls, private draft/hidden metadata and backend audit records. Files remain on their external services.
 - **Participant export:** protected event CSV download with department/year/name-or-registration filters, a ten-row preview and complete bounded snapshots. Contact information and QR credentials are excluded; downloaded text is protected against spreadsheet formulas.
-- **Announcements:** admin-published dashboard notices for all students or event registrants, with audience rules enforced by MAIN RLS. Optional event-associated HTTPS links can reference one shared signed OD PDF in Google Drive. Email delivery is pending. See the [announcements runbook](docs/runbooks/announcements.md).
+- **Announcements:** admin-published dashboard notices for all students or event registrants, with audience rules enforced by MAIN RLS. Optional event-associated HTTPS links can reference one shared signed OD PDF in Google Drive. Personalized email composition, preview, private queue and progress/retry controls are implemented; a server-only Gmail worker sends batches of ten without an application daily cap. Gmail credentials, a real send and continuous hosted operation remain pending. See the [announcements runbook](docs/runbooks/announcements.md) and [email setup](docs/runbooks/announcement-email.md).
 - **Redis:** optional authenticated event-read cache implementation, with fresh visibility/version checks and database fallback. The Edge Function is deployed to MAIN; Redis provisioning and real Redis connectivity remain pending. See the [Redis runbook](docs/runbooks/redis-events.md).
 
 The `/account` page supports Google sign-in for personal Gmail and university Google accounts. The university domain confirmed by the user is `stu.srmuviversity.ac.in`; it is not an eligibility restriction. MAIN's Google provider is enabled and the user reports working login; the [Google setup runbook](docs/runbooks/google-auth.md) documents callbacks and verification for additional origins. Password test-account login remains development-only, uses real Supabase accounts and cannot bypass backend permissions. No demo credentials are bundled. Dashboard announcements and shared OD links are implemented separately from email delivery. QR attendance is implemented and development-verified; physical-device camera checks remain pending; certificates and private questions remain later work.
@@ -148,10 +148,11 @@ supabase db query --linked --workdir supabase/main --file supabase/tests/onboard
 supabase db query --linked --workdir supabase/main --file supabase/tests/announcements.sql
 supabase db query --linked --workdir supabase/main --file supabase/tests/event_materials.sql
 supabase db query --linked --workdir supabase/main --file supabase/tests/participant_export.sql
-supabase db query --linked --workdir supabase/main --file supabase/tests/onboarding_admin_access.sql
+supabase db query --linked --workdir supabase/main --file supabase/tests/dashboards.sql
 python supabase/main/supabase/tests/concurrency.py
 npm run test:live
 npm run test:materials-export
+node scripts/test-live-events.mjs tests/live/dashboards.spec.ts
 ```
 
 The SQL suite rolls back its fixtures. Concurrency and live browser tests create synthetic accounts/events and remove them afterward; they require development-project access, email/password test login and the MAIN migration. The browser harness also checks the deployed `events-read` function, uses dedicated local test ports 5183/5184 and disables traces/screenshots containing account credentials. These remote checks are not run automatically in credential-free CI. See the runbooks for cleanup and prerequisites.
@@ -161,7 +162,7 @@ Use `npm run build` to build both apps. Separate Next.js/Vercel deployment setti
 ## Open decisions
 
 - Google OAuth activation, exact hosted callback origins and real student/admin Google login validation remain setup work; eligibility and admin-management policy are decided.
-- Which email provider and background worker will handle queued delivery, retries, and rate limits.
+- Configure the selected club Gmail sender credentials, verify a real send, and select/test continuous worker hosting. The user chose an own Node/Nodemailer worker and no application daily recipient cap; see [decision 006](docs/decisions/006-gmail-announcement-email.md).
 - How private query attachments, certificate retention, data retention, and institutional consent will be handled.
 - Which TechSpace-owned domains and authorized visual assets will be used at public launch.
 - Whether registration cancellation is needed for the initial event policy.

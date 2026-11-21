@@ -1,6 +1,6 @@
 # Dashboard announcements and common OD links
 
-This increment implements the dashboard portion of F04/AT-07 and the shared-link workflow in AT-09. The v2.0.0 specification remains draft pending stakeholder approval. Email queueing, provider delivery, throttling, retries and failure reporting (AT-08) remain pending; no email is sent by this workflow.
+This workflow implements dashboard notices in F04/AT-07 and shared links in AT-09. The v2.0.0 specification remains draft pending stakeholder approval. A subsequent user-authorized increment adds separate personalized Gmail email composition, queueing, progress and retry controls. See the [email runbook](announcement-email.md) for worker setup, verification and remaining real-send/hosting checks. Publishing the dashboard notice alone never sends email.
 
 ## Database setup and security verification
 
@@ -30,6 +30,6 @@ For a common signed OD, create or use **one Google Drive PDF**, associate the no
 
 ## Remaining release work
 
-- Select and verify an email provider, sender and worker before implementing delivery controls. Add recipient authorization, rate limits, retry/status reporting and independent dashboard persistence tests then. The current dashboard success message explicitly says email was not sent.
+- Configure Gmail credentials and a continuously operated worker, then verify real sending and reply behavior following the email runbook. The dashboard publication success message still correctly says email was not sent; queue email separately under Personalized email. Email-only notices are not added by this increment.
 - Repeat the real browser/admin/student workflow against each deployed origin before public release. Local MAIN checks do not establish hosted deployment, real Drive sharing or physical-device readiness.
 - Approval for production deployment, institutional retention/consent and operational recovery remains separate from this increment. No automatic cleanup or retention policy is added.

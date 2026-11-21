@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useIdentity, workflowError } from "@launchpad/supabase";
 import { Button } from "@launchpad/ui";
+import { EmailDelivery } from "./email-delivery";
 
 interface Announcement {
   id: string;
@@ -91,7 +92,7 @@ export function AdminAnnouncements() {
   }
   return <section className="workflow-section">
     <div className="workflow-heading"><h1>Announcements</h1><Button variant="outline" disabled={busy} onClick={() => setVersion((value) => value + 1)}>Refresh announcements</Button></div>
-    <div className="workflow-panel"><h2>Publish a dashboard announcement</h2><p>Publishing makes this notice visible to its audience immediately. Email delivery is not available yet.</p>
+    <div className="workflow-panel"><h2>Publish a dashboard announcement</h2><p>Publishing makes this notice visible to its audience immediately. Use Personalized email below to send a separate email to the same audience.</p>
       <form className="workflow-form" onSubmit={(event) => void publish(event)}>
         <label>Title<input name="title" required maxLength={160} disabled={busy} /></label>
         <label>Message<textarea name="body" required maxLength={10000} rows={5} disabled={busy} /></label>
@@ -104,6 +105,7 @@ export function AdminAnnouncements() {
         <Button type="submit" disabled={busy || (audience === "event_registrants" && (!eventId || eventsLoading || Boolean(eventsError)))}>{busy ? "Publishing…" : "Publish announcement"}</Button>
       </form>{submitError && <p role="alert">{submitError}</p>}{message && <p role="status">{message}</p>}
     </div>
+    {!loading && !error ? <EmailDelivery notices={rows} /> : null}
     <h2>Published announcements</h2>
     {loading ? <p role="status">Loading announcements…</p> : error ? <p role="alert">{error}</p> : !rows.length ? <p>No announcements on this page yet.</p> : <div className="event-grid">{rows.map((row) => <article className="workflow-panel" key={row.id}>
       <span className="event-status">{row.audience === "all_students" ? "All students" : "Event registrants"}</span><h3>{row.title}</h3><p><time dateTime={row.published_at}>{new Date(row.published_at).toLocaleString()}</time></p><p className="event-description">{row.body}</p>

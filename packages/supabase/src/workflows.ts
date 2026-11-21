@@ -77,11 +77,58 @@ export interface AnnouncementRecord {
   event_id: string | null;
   title: string;
   body: string;
-  link: string | null;
+  link_url: string | null;
+  link?: string | null;
   audience: "all_students" | "event_registrants";
-  published_by: string;
+  published_by?: string;
   published_at: string;
-  created_at: string;
+  created_at?: string;
+}
+
+export interface AdminDashboardEvent {
+  id: string;
+  title: string;
+  status: EventStatus;
+  starts_at: string;
+  ends_at: string;
+  venue: string;
+  capacity: number | null;
+  registration_count: number;
+  attendance_count: number;
+}
+
+export interface AdminDashboardAnnouncement {
+  id: string;
+  event_id: string | null;
+  title: string;
+  body: string;
+  link_url: string | null;
+  audience: "all_students" | "event_registrants";
+  published_at: string;
+}
+
+export interface AdminDashboardSummary {
+  total_events: number;
+  published_events: number;
+  upcoming_events: number;
+  total_registrations: number;
+  total_check_ins: number;
+  events: AdminDashboardEvent[];
+  recent_announcements: AdminDashboardAnnouncement[];
+}
+
+export interface StudentRegisteredEvent {
+  registration_id: string;
+  registered_at: string;
+  event: EventRecord | null;
+  checked_in: boolean;
+  checked_at: string | null;
+}
+
+export interface StudentDashboardData {
+  upcomingEvents: EventRecord[];
+  registrations: StudentRegisteredEvent[];
+  recentAnnouncements: AnnouncementRecord[];
 }
 
 export interface QrCredentialRecord {
@@ -151,4 +198,54 @@ export async function readEvents(client: SupabaseClient, cacheEnabled: boolean, 
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as EventRecord[];
+}
+
+export async function readAdminDashboard(client: SupabaseClient): Promise<AdminDashboardSummary> {
+  const { data, error } = await client.rpc("admin_get_dashboard_summary");
+  if (error) throw error;
+  return data as AdminDashboardSummary;
+}
+
+export async function readStudentDashboard(client: SupabaseClient, userId: string): Promise<StudentDashboardData> {
+  const [upcomingEventsRes, regResult, annResult] = await Promise.all([
+    client.from("events").select("*").eq("status", "published").gte("ends_at", new Date().toISOString()).order("starts_at", { ascending: true }).limit(5),
+    client.from("registrations").select("id, event_id, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(5),
+    client.from("announcements").select("id, event_id, title, body, link_url, audience, published_at").order("published_at", { ascending: false }).order("id", { ascending: false }).limit(5),
+  ]);
+  if (upcomingEventsRes.error) throw upcomingEventsRes.error;
+  if (regResult.error) throw regResult.error;
+  if (annResult.error) throw annResult.error;
+
+  const regRows = (regResult.data ?? []) as { id: string; event_id: string; created_at: string }[];
+  let registrations: StudentRegisteredEvent[] = [];
+  if (regRows.length > 0) {
+    const eventIds = regRows.map((r) => r.event_id);
+    const [eventsRes, attRes] = await Promise.all([
+      client.from("events").select("*").in("id", eventIds),
+      client.from("attendance").select("event_id, checked_in, checked_at").eq("user_id", userId).in("event_id", eventIds),
+    ]);
+    if (eventsRes.error) throw eventsRes.error;
+    if (attRes.error) throw attRes.error;
+
+    const eventMap = new Map(((eventsRes.data ?? []) as EventRecord[]).map((ev) => [ev.id, ev]));
+    const attMap = new Map(((attRes.data ?? []) as { event_id: string; checked_in: boolean; checked_at: string | null }[]).map((att) => [att.event_id, att]));
+
+    registrations = regRows.map((reg) => {
+      const ev = eventMap.get(reg.event_id) ?? null;
+      const att = attMap.get(reg.event_id);
+      return {
+        registration_id: reg.id,
+        registered_at: reg.created_at,
+        event: ev,
+        checked_in: Boolean(att?.checked_in),
+        checked_at: att?.checked_at ?? null,
+      };
+    });
+  }
+
+  return {
+    upcomingEvents: (upcomingEventsRes.data ?? []) as EventRecord[],
+    registrations,
+    recentAnnouncements: (annResult.data ?? []) as AnnouncementRecord[],
+  };
 }

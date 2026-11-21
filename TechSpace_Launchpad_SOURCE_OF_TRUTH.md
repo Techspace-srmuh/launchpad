@@ -2,7 +2,7 @@
 title: TechSpace Launchpad — Source of Truth
 version: 2.0.0
 status: Draft — pending stakeholder approval
-updated: 2026-11-20
+updated: 2026-11-21
 product: TechSpace Launchpad
 organization: TechSpace
 scope: Single university club
@@ -176,7 +176,7 @@ flowchart LR
 - **Student:** Read announcements on their dashboard; targeted students may receive email.
 - **Common signed OD:** Admin uploads **one physically signed PDF to Google Drive**, copies the authorized link into an **event announcement**, and chooses recipients. Students open the same PDF. **No standalone OD module, OD table, per-student OD PDF copies, or OD generation.**
 - **Delivery reliability:** Publishing an announcement stores it in the DB immediately; email jobs run separately with rate limits, retries and delivery status. A failed email does not invalidate an already published dashboard announcement.
-- **Open:** choose email provider, verified sender/domain and exact retry/cadence limits. Do **not** assume free tier permits instant bulk mailing to 500 recipients.
+- **Email direction approved by user, 21 November 2026:** use the existing club Gmail account (`officialtechspaceclub@gmail.com`) with our own Nodemailer worker and private MAIN queue, individual personalized emails in batches of ten, and **no application daily recipient cap**. Provider throttling/quotas still apply. Support `{name}`, `{event_name}`, `{event_date}` (India time) and `{link}` in separate plain-text email templates. Admin preview/queue/retry authority is backend-enforced; queue the notice audience, not arbitrary browser-supplied addresses. See [decision 006](docs/decisions/006-gmail-announcement-email.md). Gmail credentials, a real send and continuous hosted worker operation remain verification/setup work; a domain is not required for this chosen Gmail path.
 
 **Incremental implementation authorized by the user, 20 November 2026:** dashboard announcements and existing shared OD links are implemented first. Email provider, verified sender, queue worker, retries and delivery status remain pending. This increment does not complete all of F04 or AT-08. Notices use one ordinary optional HTTPS link; reminders may reuse the same external PDF without an OD-specific module or table.
 
@@ -294,7 +294,7 @@ flowchart TD
 | Main DB | Supabase 1 / PostgreSQL with row-level security |
 | Sensitive mutations | Authenticated Edge Functions / protected PostgreSQL RPC as appropriate |
 | Certificate storage | Supabase Project 2 private storage; server-only privileged access |
-| Emails | External email provider with background/queued job processing (provider and worker TBD) |
+| Emails | User-selected club Gmail SMTP with a server-only Node/Nodemailer worker and private MAIN queue; hosted worker operation and real sending verification pending |
 | Cache | User-authorized optional Redis REST cache for authenticated event content, with fresh database visibility/version checks and database fallback; implementation exists, provider/provisioning and live Redis verification pending. See the [Redis decision record](docs/decisions/002-redis-direction.md) and [runbook](docs/runbooks/redis-events.md). |
 | OD/resources | Google Drive shared/restricted links; URL records only |
 | Galleries | Google Photos shared-album links; URL records only |
@@ -397,7 +397,7 @@ flowchart TD
 | Student identity/eligibility | **Resolved by user, 20 November 2026:** personal Gmail or university Google; complete onboarding gives immediate eligibility, no approval. No university-verification claim. | Google activation and real onboarding validation remain required |
 | Admin provisioning | **Resolved by user:** two initial authorized emails; confirmed Google bootstrap and audited admin-managed grant/revoke for confirmed registered accounts. | Backend authorization checks and real Google bootstrap validation |
 | Registration cancellation | Not provided initially unless required | Event launch policy |
-| Email provider / verified sender | Pick provider with documented sending limits, verified sender, queue | Email delivery |
+| Email provider / verified sender | **Resolved by user:** existing club Gmail, own Nodemailer worker, individual personalization, batches of ten, no application daily cap. Credentials, a real send and worker hosting remain setup/verification work. | Real email delivery and continuous hosted operation |
 | Private query attachment handling | Drive links for public resources; private bucket for sensitive uploads | Query attachments |
 | Certificate template layout | Admin-defined fixed positions and preview | Certificate issuance |
 | PDF retention | 30 days **proposed**, with safe regeneration and preserved templates | Automated cleanup |
