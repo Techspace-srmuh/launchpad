@@ -10,5 +10,5 @@ export const metadata: Metadata = { title: "Launchpad - TechSpace", description:
 export const viewport: Viewport = { themeColor: "#ffffff", viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  return <html lang="en"><body><AppShell>{children}</AppShell></body></html>;
+  return <html lang="en" suppressHydrationWarning><body><AppShell>{children}</AppShell></body></html>;
 }

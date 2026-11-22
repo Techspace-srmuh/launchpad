@@ -45,4 +45,27 @@ for (const surface of [
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     expect(errors).toEqual([]);
   });
+
+  test(`${surface.name}: extension attribute on html does not warn during hydration`, async ({ page }) => {
+    const hydrationWarnings: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" && /hydration|hydrated but some attributes/i.test(message.text())) hydrationWarnings.push(message.text());
+    });
+    await page.addInitScript(() => {
+      const addAttribute = () => {
+        if (!document.documentElement) return false;
+        document.documentElement.setAttribute("nighteye", "disabled");
+        return true;
+      };
+      if (addAttribute()) return;
+      const observer = new MutationObserver(() => { if (addAttribute()) observer.disconnect(); });
+      observer.observe(document, { childList: true });
+    });
+    await page.goto(`${surface.origin}/account`);
+    await expect(page.locator("html")).toHaveAttribute("nighteye", "disabled");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await page.waitForLoadState("load");
+    await page.waitForTimeout(200);
+    expect(hydrationWarnings).toEqual([]);
+  });
 }
