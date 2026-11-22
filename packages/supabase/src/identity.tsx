@@ -21,13 +21,16 @@ export function IdentityProvider({ config, children }: { config: BrowserConfig |
     if (!client) return;
     let active = true;
     const { data: listener } = client.auth.onAuthStateChange((_event, nextSession) => {
-      if (active) { setSession(nextSession); setVersion((value) => value + 1); }
+      if (active) {
+        if (nextSession && resolvedAccount.current !== nextSession.user.id) setLoading(true);
+        setSession(nextSession); setVersion((value) => value + 1);
+      }
     });
     void client.auth.getSession().then(({ data, error: authError }) => {
       if (!active) return;
       setSession(data.session);
       if (authError) setError("Your sign-in session could not be restored. Please try signing in again.");
-      setLoading(false);
+      if (!data.session || authError) setLoading(false);
     }).catch(() => {
       if (active) {
         setError("Your sign-in session could not be restored. Please try signing in again.");

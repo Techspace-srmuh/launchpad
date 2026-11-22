@@ -148,7 +148,7 @@ function ProfileEditor({ profile, onCancel, onSaved }: { profile: NonNullable<Re
       const result = await client.rpc("save_profile", { p_full_name: values.full_name, p_roll_number: values.roll_number, p_department: values.department, p_academic_year: Number(values.academic_year), p_course: values.course, p_branch: values.branch, p_section: values.section, p_mobile_number: values.mobile_number });
       if (result.error) throw result.error;
       await refresh();
-      if (onSaved) onSaved(); else router.push("/events");
+      if (onSaved) onSaved(); else router.push("/");
     } catch (failure) { setError(workflowError(failure)); }
     finally { setBusy(false); }
   }
@@ -190,11 +190,14 @@ function ProfileEditor({ profile, onCancel, onSaved }: { profile: NonNullable<Re
 
 export function ProfilePage() {
   const { client, profile, loading } = useIdentity();
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  if (loading) return <p role="status">Loading your profile…</p>;
-  if (!isProfileComplete(profile)) return <ProfileEditor key={profile?.user_id ?? "new"} profile={profile} />;
+  useEffect(() => { if (justSaved && isProfileComplete(profile)) router.replace("/"); }, [justSaved, profile, router]);
+  if (loading) return <p role="status">Loading your profile.</p>;
+  if (!isProfileComplete(profile)) return <ProfileEditor key={profile?.user_id ?? "new"} profile={profile} onSaved={() => setJustSaved(true)} />;
   if (!profile) return <p role="status">Loading your profile…</p>;
   if (editing) return <ProfileEditor key={`${profile.user_id}-edit`} profile={profile} onCancel={() => setEditing(false)} onSaved={() => setEditing(false)} />;
   async function signOut() {

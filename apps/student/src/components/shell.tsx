@@ -2,7 +2,8 @@
 
 import { ArrowLeft, ArrowRight, Bell, Bookmark, CalendarDays, CircleHelp, Compass, Orbit, UserRound } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import type { ComponentProps } from "react";
 import type { ReactNode } from "react";
 import { Button, cn } from "@launchpad/ui";
@@ -39,9 +40,23 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 function StudentShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { session, profile, loading } = useIdentity();
+  const router = useRouter();
+  const identity = useIdentity();
+  const { session, profile, loading } = identity;
+  const publicRoute = pathname === "/" || pathname === "/welcome" || pathname === "/account" || pathname === "/setup";
+  const destination = !browserConfig.ok || loading || identity.error ? null
+    : !session ? publicRoute ? null : "/"
+    : !isProfileComplete(profile)
+      ? pathname === "/profile" || pathname === "/account" || pathname === "/setup" ? null : "/profile"
+      : pathname === "/welcome" ? "/" : null;
+
+  useEffect(() => { if (destination) router.replace(destination); }, [destination, router]);
+
+  if (loading && pathname !== "/account" && pathname !== "/setup") return <main className="onboarding-shell" role="status">Checking your account.</main>;
+  if (destination) return <main className="onboarding-shell" role="status">Opening {destination === "/profile" ? "your profile" : "onboarding"}.</main>;
+  if (identity.error && !publicRoute && pathname !== "/profile") return <main className="workflow-panel"><h1>Account access could not be checked</h1><p role="alert">{identity.error}</p><Button onClick={() => void identity.refresh()}>Retry</Button><Link href="/account">Open account</Link></main>;
   if (pathname === "/welcome" || pathname === "/account" || (pathname === "/" && !session) || (pathname === "/profile" && !isProfileComplete(profile))) {
-    return <main className="onboarding-shell">{loading && pathname !== "/account" ? <p className="onboarding-loading" role="status">Getting your Launchpad ready…</p> : children}</main>;
+    return <main className="onboarding-shell">{children}</main>;
   }
   return (
     <div className="app-shell">

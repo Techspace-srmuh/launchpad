@@ -35,7 +35,7 @@ test.describe("Student Onboarding UI - Visual Consistency and Sequential Matrix 
 
     // Verify animated stars and 2 revolving orbiting stars appear on slide 1
     await expect(page.locator(".onboarding-stars-coding .onboarding-orbit-star")).toHaveCount(2);
-    await expect(page.locator(".onboarding-stars-coding .onboarding-star")).toHaveCount(4);
+    await expect(page.locator(".onboarding-stars-coding .onboarding-blinking-star")).toHaveCount(2);
 
     // Verify no detached flame or waving flag overlays exist
     await expect(page.locator(".onboarding-flame")).toHaveCount(0);
@@ -100,7 +100,7 @@ test.describe("Student Onboarding UI - Visual Consistency and Sequential Matrix 
     // Slide 3: Flag illustration, revolving stars, and animated stars are present
     await expect(page.locator(".onboarding-art-flag")).toBeVisible();
     await expect(page.locator(".onboarding-stars-flag .onboarding-orbit-star")).toHaveCount(2);
-    await expect(page.locator(".onboarding-stars-flag .onboarding-star")).toHaveCount(5);
+    await expect(page.locator(".onboarding-stars-flag .onboarding-blinking-star")).toHaveCount(2);
     await expect(page.locator(".onboarding-flag-wave")).toHaveCount(0);
 
     // Navigate backward using pagination indicator to Slide 2
