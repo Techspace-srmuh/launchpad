@@ -83,7 +83,7 @@ test("student: welcome flow reaches account on mobile and desktop", async ({ pag
   await expect(page.getByRole("heading", { name: "Discover & Join" })).toBeVisible();
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Participate & Grow" })).toBeVisible();
-  await page.getByRole("link", { name: "Next", exact: true }).click();
+  await page.getByRole("link", { name: "Continue to sign in", exact: true }).click();
   await expect(page).toHaveURL("http://127.0.0.1:5173/account");
   await expect(page.getByRole("heading", { name: "Sign in to continue" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Continue with Google" })).toBeDisabled();
@@ -91,6 +91,6 @@ test("student: welcome flow reaches account on mobile and desktop", async ({ pag
   await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
   await page.goto("http://127.0.0.1:5173/welcome");
   await page.getByRole("button", { name: "Go to slide 2" }).click();
-  await page.getByRole("link", { name: "Skip", exact: true }).click();
+  await page.getByRole("link", { name: "Skip introduction", exact: true }).click();
   await expect(page).toHaveURL("http://127.0.0.1:5173/account");
 });
