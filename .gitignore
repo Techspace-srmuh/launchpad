@@ -34,3 +34,7 @@ next-env.d.ts
 
 # Local design references attached to Codex conversations
 .codex-attachments/
+
+# Local browser inspection artifacts
+.playwright-cli/
+output/playwright/

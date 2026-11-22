@@ -17,10 +17,12 @@ const adminOrigin = "http://127.0.0.1:5184";
 
 async function login(page: Page, origin: string, account: Account) {
   await page.goto(`${origin}/account`);
+  const emailOption = page.getByRole("button", { name: /Continue with Email/ });
+  if (origin === studentOrigin) await emailOption.click();
   await page.getByLabel("Email", { exact: true }).fill(account.email);
   await page.getByLabel("Password", { exact: true }).fill(account.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Sign out", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign out", exact: true }).or(page.getByRole("heading", { name: "Complete your profile", exact: true }))).toBeVisible();
 }
 
 function datetime(offsetHours: number) {
@@ -92,13 +94,14 @@ test("real admin publishes, student registers, and unauthorized direct requests 
     await login(studentPage, studentOrigin, accounts.student);
     await studentPage.setViewportSize({ width: 390, height: 844 });
     await studentPage.goto(`${studentOrigin}/profile`);
-    await studentPage.getByLabel("Full name", { exact: true }).fill("Integration student updated");
-    await studentPage.getByLabel("Course", { exact: true }).fill("B.Tech");
-    await studentPage.getByLabel("Branch", { exact: true }).fill("Computer Science");
+    await studentPage.getByLabel("Full Name", { exact: true }).fill("Integration student updated");
+    await studentPage.getByLabel("Course", { exact: true }).selectOption("B.Tech");
+    await studentPage.getByRole("textbox", { name: "Branch", exact: true }).fill("Computer Science");
+    await studentPage.getByRole("button", { name: "Next", exact: true }).click();
     await studentPage.getByLabel("Section", { exact: true }).fill("A");
-    await studentPage.getByLabel("Mobile number", { exact: true }).fill("+91 98765 43210");
-    await studentPage.getByRole("button", { name: "Save profile", exact: true }).click();
-    await expect(studentPage.getByText("Profile saved.", { exact: true })).toBeVisible();
+    await studentPage.getByLabel("Mobile Number", { exact: true }).fill("+91 98765 43210");
+    await studentPage.getByRole("button", { name: "Save and explore events", exact: true }).click();
+    await expect(studentPage).toHaveURL(`${studentOrigin}/events`);
     const savedProfile = await clients.student.from("profiles").select("full_name,verification_status").single();
     expect(savedProfile.data).toMatchObject({ full_name: "Integration student updated", verification_status: "unverified" });
     expect((await clients.student.rpc("is_admin")).data).toBe(false);
@@ -162,7 +165,7 @@ test("real admin publishes, student registers, and unauthorized direct requests 
     expect(closedFunctionRead.data.events[0].status).toBe("closed");
     await studentPage.goto(`${studentOrigin}/account`);
     await studentPage.getByRole("button", { name: "Sign out", exact: true }).click();
-    await expect(studentPage.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+    await expect(studentPage.getByRole("button", { name: "Continue with Google", exact: true })).toBeVisible();
     await studentPage.goto(`${studentOrigin}/my-events`);
     await expect(studentPage.getByRole("heading", { name: "Sign in required", exact: true })).toBeVisible();
   } finally {

@@ -18,12 +18,16 @@ for (const surface of surfaces) {
 
     await page.goto(surface.origin);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByRole("status")).toContainText("Setup needed");
     const studentMobile = surface.name === "student" && (page.viewportSize()?.width ?? 0) <= 700;
-    await expect(page.getByRole("navigation", { name: studentMobile ? "Mobile navigation" : "Main navigation" })).toBeVisible();
-
-    if (studentMobile) await page.getByRole("link", { name: /View setup/ }).click();
-    else await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Setup", exact: true }).click();
+    if (surface.name === "student") {
+      await expect(page.getByRole("heading", { name: /Welcome to Launchpad/ })).toBeVisible();
+      await expect(page.getByRole("navigation", { name: studentMobile ? "Mobile navigation" : "Main navigation" })).toHaveCount(0);
+      await page.getByRole("link", { name: "I already have an account" }).click();
+      await page.getByRole("link", { name: "View setup" }).click();
+    } else {
+      await expect(page.getByRole("status")).toContainText("Setup needed");
+      await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Setup", exact: true }).click();
+    }
     await expect(page).toHaveURL(`${surface.origin}/setup`);
     await expect(page.getByText("NEXT_PUBLIC_MAIN_SUPABASE_URL is required.", { exact: true })).toBeVisible();
     await page.reload();
@@ -63,7 +67,7 @@ for (const surface of surfaces) {
       await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Account", exact: true }).click();
     }
     await expect(page).toHaveURL(`${surface.origin}/account`);
-    await expect(page.getByRole("heading", { name: surface.name === "student" ? /One sign in/ : "Account" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: surface.name === "student" ? "Sign in to continue" : "Account" })).toBeVisible();
     await page.goBack();
     await expect(page).toHaveURL(`${surface.origin}/setup`);
     await page.reload();
@@ -74,14 +78,19 @@ for (const surface of surfaces) {
 
 test("student: welcome flow reaches account on mobile and desktop", async ({ page }) => {
   await page.goto("http://127.0.0.1:5173/");
-  await page.getByRole("link", { name: /Get started/ }).click();
-  await expect(page).toHaveURL("http://127.0.0.1:5173/welcome");
-  await expect(page.getByRole("heading", { name: /Your next idea starts here/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Welcome to Launchpad/ })).toBeVisible();
+  await page.getByRole("button", { name: "Get Started", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Discover & Join" })).toBeVisible();
   await page.getByRole("button", { name: "Next", exact: true }).click();
-  await expect(page.getByRole("heading", { name: /Discover. Join./ })).toBeVisible();
-  await page.getByRole("button", { name: "Next", exact: true }).click();
-  await expect(page.getByRole("heading", { name: /Show up and/ })).toBeVisible();
-  await page.getByRole("link", { name: /Get started/ }).click();
+  await expect(page.getByRole("heading", { name: "Participate & Grow" })).toBeVisible();
+  await page.getByRole("link", { name: "Next", exact: true }).click();
   await expect(page).toHaveURL("http://127.0.0.1:5173/account");
-  await expect(page.getByRole("heading", { name: /One sign in/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in to continue" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Continue with Google" })).toBeDisabled();
+  await page.getByRole("button", { name: /Continue with Email/ }).click();
+  await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
+  await page.goto("http://127.0.0.1:5173/welcome");
+  await page.getByRole("button", { name: "Go to slide 2" }).click();
+  await page.getByRole("link", { name: "Skip", exact: true }).click();
+  await expect(page).toHaveURL("http://127.0.0.1:5173/account");
 });

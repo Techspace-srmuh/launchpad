@@ -1,13 +1,15 @@
 "use client";
 
 import "../onboarding-theme.css";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CalendarCheck2, BookOpen, PencilLine, UserRound } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, CalendarCheck2, BookOpen, PencilLine, UserRound, GraduationCap, IdCard, Mail, Network, Phone, ChartNoAxesColumnIncreasing, Building2, UsersRound, ChevronDown, type LucideIcon } from "lucide-react";
 import { isProfileComplete, useIdentity, workflowError } from "@launchpad/supabase";
 import { Button } from "@launchpad/ui";
 import { browserConfig } from "../lib/config";
 import { AstronautDoodle } from "../components/space-doodles";
+import { LaunchpadBrand, MoonHorizon } from "./onboarding";
 
 export function AccessGate({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
   const identity = useIdentity();
@@ -21,6 +23,17 @@ export function AccessGate({ children, admin = false }: { children: ReactNode; a
 
 export function AccountPage() {
   const { client, session, profile, loading, error: identityError } = useIdentity();
+  const router = useRouter();
+  const checkingNewAccount = useRef(false);
+  const [showEmail, setShowEmail] = useState(false);
+  useEffect(() => {
+    if (!session) checkingNewAccount.current = false;
+    else if (loading) checkingNewAccount.current = true;
+    else if (checkingNewAccount.current) {
+      checkingNewAccount.current = false;
+      if (!identityError && !isProfileComplete(profile)) router.replace("/profile");
+    }
+  }, [loading, session, profile, identityError, router]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -64,23 +77,33 @@ export function AccountPage() {
     catch (failure) { setError(workflowError(failure)); }
     finally { setBusy(false); }
   }
-  return <section className="workflow-panel account-page"><div className="account-illustration"><AstronautDoodle scene="flag" /></div><span className="eyebrow">YOUR LAUNCHPAD</span><h1>One sign in.<br />Every event.</h1>
-    {!client ? <p>MAIN Supabase settings are missing. <Link href="/setup">View setup</Link>.</p> : loading ? <p role="status">Checking your account…</p> : session ? <>
-      <p>Signed in as <strong>{session.user.email}</strong></p>
-      {!isProfileComplete(profile) && <p>Complete your student details to register for events. No manual approval is required.</p>}
-      <div className="workflow-actions">
-        {!isProfileComplete(profile) ? <Button asChild><Link href="/profile">Complete student profile</Link></Button> : <Link href="/profile">View student profile</Link>}
-        <Link href="/events">Open events</Link>
-        <Button disabled={busy} variant="outline" onClick={() => void signOut()}>Sign out</Button>
-      </div>
-    </> : <>
-      <p>Discover events, keep your QR close, and catch every club update. Sign in with a personal Gmail or university Google account.</p>
-      <Button className="account-google-button" disabled={busy} onClick={() => void signInWithGoogle()}>{busy ? "Connecting…" : "Continue with Google"}</Button>
-      <p className="account-footnote">University accounts use registration_number@stu.srmuviversity.ac.in. Personal Gmail works too.</p>
-      <Link className="onboarding-optional-link" href="/welcome">See how Launchpad works <ArrowRight size={16} aria-hidden="true" /></Link>
-      {process.env.NODE_ENV === "development" && <form onSubmit={(event) => void signIn(event)} className="workflow-form"><p>Development access uses real test accounts provisioned in Supabase. It does not grant admin permission.</p><label>Email<input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label><Button disabled={busy} type="submit">{busy ? "Signing in…" : "Sign in"}</Button></form>}
-    </>}
-    {(error || identityError) && <p role="alert">{error || identityError}</p>}
+  return <section className="onboarding-screen sign-in-screen" aria-labelledby="sign-in-title">
+    <LaunchpadBrand />
+    <div className="sign-in-copy">
+      <h1 id="sign-in-title">{session ? "You’re ready to launch" : "Sign in to continue"}</h1>
+      <p>{session ? <>Signed in as <strong>{session.user.email}</strong></> : <>Use your Google account to access<br />Launchpad.</>}</p>
+    </div>
+    {loading ? <p role="status">Checking your account…</p> : session ? <div className="sign-in-options">
+      <Link className="onboarding-primary" href={isProfileComplete(profile) ? "/" : "/profile"}>{isProfileComplete(profile) ? "Open Launchpad" : "Complete your profile"}<ArrowRight aria-hidden="true" /></Link>
+      <button className="onboarding-secondary" disabled={busy} onClick={() => void signOut()}>Sign out</button>
+    </div> : <div className="sign-in-options">
+      <button type="button" className="sign-in-provider" disabled={busy || !client} onClick={() => void signInWithGoogle()}>
+        <svg viewBox="0 0 48 48" aria-hidden="true" className="google-mark"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6C44.4 38.02 46.98 31.87 46.98 24.55Z"/><path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.78-4.59l-7.98-6.19A23.87 23.87 0 0 0 0 24c0 3.87.93 7.53 2.56 10.78l7.97-6.19Z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.91-5.8l-7.73-6c-2.15 1.45-4.92 2.3-8.18 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"/></svg>
+        {busy ? "Connecting…" : "Continue with Google"}
+      </button>
+      {process.env.NODE_ENV === "development" && <>
+        <div className="sign-in-divider"><span />or<span /></div>
+        <button type="button" className="sign-in-provider sign-in-email" aria-expanded={showEmail} aria-controls="development-sign-in" onClick={() => setShowEmail((value) => !value)}><Mail aria-hidden="true" /><span>Continue with Email<small>(Development only)</small></span></button>
+        {showEmail && <form id="development-sign-in" onSubmit={(event) => void signIn(event)} className="sign-in-form">
+          <label>Email<input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+          <label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+          <button className="onboarding-primary" disabled={busy || !client} type="submit">{busy ? "Signing in…" : "Sign in"}</button>
+        </form>}
+      </>}
+      {!client && <p className="onboarding-notice" role="status">Sign-in is unavailable until Launchpad is connected. <Link href="/setup">View setup</Link>.</p>}
+    </div>}
+    {(error || identityError) && <p className="onboarding-error" role="alert">{error || identityError}</p>}
+    <MoonHorizon />
   </section>;
 }
 
@@ -90,46 +113,78 @@ function initialValues(profile: ReturnType<typeof useIdentity>["profile"]): Prof
   return { full_name: profile?.full_name ?? "", roll_number: profile?.roll_number ?? "", course: profile?.course ?? "", branch: profile?.branch ?? "", department: profile?.department ?? "", section: profile?.section ?? "", academic_year: String(profile?.academic_year ?? ""), mobile_number: profile?.mobile_number ?? "" };
 }
 
+const courseOptions = ["B.Tech", "B.Sc", "BCA", "BBA", "B.Com", "BA", "M.Tech", "M.Sc", "MCA", "MBA", "PhD"];
+const branchOptions = ["Computer Science & Engineering", "Electronics & Communication", "Mechanical Engineering", "Civil Engineering", "Electrical Engineering", "Information Technology"];
+
 function ProfileEditor({ profile, onCancel, onSaved }: { profile: NonNullable<ReturnType<typeof useIdentity>["profile"]> | null; onCancel?: () => void; onSaved?: () => void }) {
   const { client, refresh } = useIdentity();
+  const router = useRouter();
   const [values, setValues] = useState<ProfileValues>(() => initialValues(profile));
   const [step, setStep] = useState<1 | 2>(1);
+  const [customFields, setCustomFields] = useState<string[]>(() => [
+    ...(profile?.course && !courseOptions.includes(profile.course) ? ["course"] : []),
+    ...(profile?.branch && !branchOptions.includes(profile.branch) ? ["branch"] : []),
+  ]);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  function update(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) { const { name, value } = event.currentTarget; setValues((previous) => ({ ...previous, [name]: value })); }
-  function continueToStudies(event: FormEvent<HTMLFormElement>) {
+  function update(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const { name, value } = event.currentTarget;
+    if (value === "__other") {
+      setCustomFields((previous) => [...previous, name]);
+      setValues((previous) => ({ ...previous, [name]: "" }));
+    } else setValues((previous) => ({ ...previous, [name]: value }));
+  }
+  function focusHeading() { requestAnimationFrame(() => document.getElementById("profile-title")?.focus()); }
+  function next(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!event.currentTarget.reportValidity()) return;
-    setError(""); setStep(2);
+    setError(""); setStep(2); focusHeading();
   }
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!client) return;
-    setBusy(true); setError(""); setMessage("");
+    setBusy(true); setError("");
     try {
       const result = await client.rpc("save_profile", { p_full_name: values.full_name, p_roll_number: values.roll_number, p_department: values.department, p_academic_year: Number(values.academic_year), p_course: values.course, p_branch: values.branch, p_section: values.section, p_mobile_number: values.mobile_number });
       if (result.error) throw result.error;
-      setMessage("Profile saved."); await refresh(); onSaved?.();
+      await refresh();
+      if (onSaved) onSaved(); else router.push("/events");
     } catch (failure) { setError(workflowError(failure)); }
     finally { setBusy(false); }
   }
-  const input = (name: keyof ProfileValues, label: string, options: { autoComplete?: string; type?: string; min?: string; max?: string; maxLength?: number; placeholder?: string; readOnly?: boolean; help?: string } = {}) => <label key={name}>{label}<input name={name} value={values[name]} onChange={update} autoComplete={options.autoComplete} type={options.type ?? "text"} min={options.min} max={options.max} maxLength={options.maxLength} placeholder={options.placeholder} readOnly={options.readOnly} required aria-describedby={options.help ? `${name}-help` : undefined} />{options.help && <span id={`${name}-help`} className="field-help">{options.help}</span>}</label>;
+  const input = (name: keyof ProfileValues, label: string, Icon: LucideIcon, options: { autoComplete?: string; type?: string; maxLength?: number; placeholder?: string; readOnly?: boolean; help?: string; pattern?: string } = {}) => <div key={name}>
+    <label className="onboarding-field"><Icon aria-hidden="true" /><span><span className="onboarding-field-label">{label} <b aria-hidden="true">*</b></span><input name={name} value={values[name]} onChange={update} autoComplete={options.autoComplete} type={options.type ?? "text"} maxLength={options.maxLength} placeholder={options.placeholder} readOnly={options.readOnly} pattern={options.pattern} required aria-describedby={options.help ? `${name}-help` : undefined} /></span></label>
+    {options.help && <p id={`${name}-help`} className="onboarding-field-help">{options.help}</p>}
+  </div>;
+  const select = (name: keyof ProfileValues, label: string, Icon: LucideIcon, options: string[]) => customFields.includes(name)
+    ? input(name, label, Icon, { maxLength: 120, placeholder: `Enter your ${label.toLowerCase()}` })
+    : <label className="onboarding-field" key={name}><Icon aria-hidden="true" /><span><span className="onboarding-field-label">{label} <b aria-hidden="true">*</b></span><select name={name} value={values[name]} onChange={update} required><option value="" disabled>Select your {label.toLowerCase()}</option>{options.map((option) => <option key={option}>{option}</option>)}<option value="__other">Other</option></select></span><ChevronDown className="field-chevron" aria-hidden="true" /></label>;
 
-  return <section className="profile-page"><header className="profile-intro"><AstronautDoodle scene="idea" className="profile-astronaut" /><span className="eyebrow">YOUR DETAILS · STEP {step} OF 2</span><h1>{profile ? "Edit your" : "Let’s set up"}<br />{profile ? "profile." : "space."}</h1><p>A few details connect your event registrations and check-ins. Complete details make you eligible to register immediately.</p></header>
-    {step === 1 ? <form onSubmit={(event) => continueToStudies(event)} className="workflow-form profile-form">
-      <section className="profile-form-section" aria-labelledby="identity-heading"><div className="profile-section-heading"><span>01</span><div><h2 id="identity-heading">Your identity</h2><p>How we’ll identify your event record.</p></div></div><div className="profile-fields profile-fields-single">
-        {input("full_name", "Full name", { autoComplete: "name", maxLength: 120, placeholder: "Your full name" })}{input("roll_number", "Registration number", { maxLength: 40, placeholder: "Your registration number", readOnly: Boolean(profile?.roll_number), help: profile?.roll_number ? "Your claimed registration number cannot be changed here." : undefined })}
-      </div></section>
-      <div className="profile-submit"><p>Use the name and registration number you use for your studies. Your profile details are self-declared.</p><Button type="submit">Continue <ArrowRight aria-hidden="true" /></Button></div>
-    </form> : <form onSubmit={(event) => void save(event)} className="workflow-form profile-form">
-      <section className="profile-form-section" aria-labelledby="study-heading"><div className="profile-section-heading"><span>02</span><div><h2 id="study-heading">Study and contact</h2><p>Finish the details needed for event registration.</p></div></div><div className="profile-fields">
-        {input("course", "Course", { maxLength: 120, placeholder: "For example, B.Tech" })}{input("branch", "Branch", { maxLength: 120, placeholder: "For example, Computer Science" })}{input("department", "Department", { maxLength: 120, placeholder: "Your department" })}{input("section", "Section", { maxLength: 40, placeholder: "Your section" })}<label>Current year of study<select name="academic_year" value={values.academic_year} onChange={update} required><option value="" disabled>Select your current year</option>{Array.from({ length: 8 }, (_, index) => { const year = index + 1; const suffix = year === 1 ? "st" : year === 2 ? "nd" : year === 3 ? "rd" : "th"; return <option key={year} value={year}>{year}{suffix} year</option>; })}</select><span className="field-help">Choose the year you are studying now.</span></label>{input("mobile_number", "Mobile number", { type: "tel", autoComplete: "tel", maxLength: 30, placeholder: "+91 98765 43210", help: "Use 10–15 digits, with an optional country code such as +91." })}
-      </div></section>
-      <div className="profile-submit profile-submit-step"><Button type="button" variant="outline" onClick={() => { setError(""); setStep(1); }}><ArrowLeft aria-hidden="true" /> Back</Button><p>These details are self-declared and do not verify university enrollment. No manual approval is required.</p><Button type="submit" disabled={busy}>{busy ? "Saving…" : profile ? "Save changes" : "Save and explore events"}</Button></div>
-    </form>}
-    {onCancel && <Button className="profile-cancel" variant="ghost" onClick={onCancel}>Cancel editing</Button>}
-    {error && <p role="alert">{error}</p>}{message && <><p role="status">{message}</p><Link href="/events">Explore events</Link></>}
+  return <section className="onboarding-screen profile-setup-screen" aria-labelledby="profile-title">
+    <header className="profile-step-header">
+      {step === 2 ? <button type="button" aria-label="Previous step" onClick={() => { setError(""); setStep(1); focusHeading(); }} disabled={busy}><ArrowLeft aria-hidden="true" /></button> : onCancel ? <button type="button" onClick={onCancel} aria-label="Cancel editing"><ArrowLeft aria-hidden="true" /></button> : <Link href="/account" aria-label="Back to account"><ArrowLeft aria-hidden="true" /></Link>}
+      <span>{step} of 2</span>
+    </header>
+    <div className="profile-step-progress" role="progressbar" aria-label="Profile setup" aria-valuemin={0} aria-valuemax={2} aria-valuenow={step}><span style={{ width: `${step * 50}%` }} /></div>
+    <div className="profile-setup-copy"><h1 id="profile-title" tabIndex={-1}>{onCancel ? "Edit your profile" : "Complete your profile"}</h1><p>{step === 1 ? <>Help us personalize your experience<br />and enable event registration.</> : "A few final details, and you’re ready to join your next TechSpace event."}</p></div>
+    <form className="profile-setup-form" onSubmit={step === 1 ? next : (event) => void save(event)}>
+      <fieldset disabled={busy} className="profile-setup-fields"><legend className="sr-only">{step === 1 ? "Academic details" : "Department and contact details"}</legend>
+        {step === 1 ? <>
+          {input("full_name", "Full Name", UserRound, { autoComplete: "name", maxLength: 120, placeholder: "Your full name", pattern: ".*\\S.*" })}
+          {input("roll_number", "Registration Number", IdCard, { maxLength: 40, placeholder: "Your registration number", readOnly: Boolean(profile?.roll_number), pattern: ".*\\S.*", help: profile?.roll_number ? "Your registration number cannot be changed." : undefined })}
+          {select("course", "Course", GraduationCap, courseOptions)}
+          {select("branch", "Branch", Network, branchOptions)}
+          <label className="onboarding-field"><ChartNoAxesColumnIncreasing aria-hidden="true" /><span><span className="onboarding-field-label">Academic Year <b aria-hidden="true">*</b></span><select name="academic_year" value={values.academic_year} onChange={update} required><option value="" disabled>Select your current year</option>{Array.from({ length: 8 }, (_, index) => { const year = index + 1; return <option key={year} value={year}>{year}{year === 1 ? "st" : year === 2 ? "nd" : year === 3 ? "rd" : "th"} Year</option>; })}</select></span><ChevronDown className="field-chevron" aria-hidden="true" /></label>
+        </> : <>
+          {input("department", "Department", Building2, { maxLength: 120, placeholder: "Your department", pattern: ".*\\S.*" })}
+          {input("section", "Section", UsersRound, { maxLength: 40, placeholder: "Your section", pattern: ".*\\S.*" })}
+          {input("mobile_number", "Mobile Number", Phone, { type: "tel", autoComplete: "tel", maxLength: 30, placeholder: "+91 98765 43210", help: "Use 10–15 digits, with an optional country code." })}
+          <p className="onboarding-field-help">Your details are self-declared. Completing your profile enables event registration without manual approval.</p>
+        </>}
+      </fieldset>
+      {error && <p className="onboarding-error" role="alert">{error}</p>}
+      <button type="submit" className="onboarding-primary profile-setup-submit" disabled={busy}>{step === 1 ? "Next" : busy ? "Saving…" : onCancel ? "Save changes" : "Save and explore events"}<ArrowRight aria-hidden="true" /></button>
+    </form>
   </section>;
 }
 

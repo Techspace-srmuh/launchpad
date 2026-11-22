@@ -26,6 +26,7 @@ These are release requirements; only the development capabilities listed below a
 
 ## Implemented development workflows
 
+- **Student welcome:** signed-out visitors land on the three illustrated introduction slides, with skip and returning-account links. `/welcome` replays the introduction; `/account` provides Google sign-in and expandable development-only email access. Profile setup collects academic details first, then department, section and mobile number, retaining the existing protected profile save.
 - **Student:** profile creation/editing, published-event browsing/details, registration, My Events, and private event QR credentials for check-in. Onboarding collects name, registration number, course, branch, department, section, academic year and mobile number. Complete details give immediate eligibility; manual approval is not required.
 - **Admin:** backend-checked event operations and participant views, protected access management by exact registered email with an audited reason, and mobile camera QR check-in scanning with audited corrections.
 - **QR Attendance:** event-specific opaque HMAC tokens generated server-side without student roll numbers or personal details; backend enforces matching event, check-in window (`now() between starts_at and ends_at`), atomic single check-in, and audited admin manual corrections with mandatory reasons. See the [attendance runbook](docs/runbooks/attendance.md).
