@@ -1,24 +1,17 @@
 "use client";
 
-import { Activity, ArrowLeft, ArrowRight, ArrowUpRight, Bell, CalendarDays, CircleHelp, LockKeyhole, Orbit, ScanLine, Settings2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Bell, CalendarDays, CircleHelp, LockKeyhole, Orbit, ScanLine, Settings2 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { ComponentProps } from "react";
 import type { ReactNode } from "react";
-import { Button, cn } from "@launchpad/ui";
+import { Button, cn, ScrollReveal } from "@launchpad/ui";
 import { IdentityProvider, useIdentity } from "@launchpad/supabase";
 
 import { browserConfig } from "../lib/config";
 import { AdminDashboard } from "../features/dashboard";
-
-function NavLink({ href, className, ...props }: ComponentProps<typeof Link>) {
-  const pathname = usePathname();
-  const active = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
-  return <Link href={href} aria-current={active ? "page" : undefined} className={cn(className, active && "nav-link-active")} {...props} />;
-}
+import { AdminNavigationMenu } from "./navigation-menu";
 
 function Brand() {
-  return <Link href="/" className="brand" aria-label="Launchpad Control overview"><span className="brand-mark"><Orbit size={18} /></span><span>launchpad<span className="brand-dot">.</span><small>CONTROL</small></span></Link>;
+  return <Link href="/" className="brand" aria-label="Launchpad Control overview"><span className="brand-mark"><Orbit size={23} /></span><span className="brand-words"><strong>TechSpace</strong><span>Launchpad <small>CONTROL</small></span></span></Link>;
 }
 
 function SetupNotice() {
@@ -27,8 +20,8 @@ function SetupNotice() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   return <IdentityProvider config={browserConfig.ok ? browserConfig.config : null}><div className="app-shell">
-    <header className="topbar"><div className="topbar-inner"><Brand /><nav className="main-nav" aria-label="Main navigation"><NavLink href="/" aria-label="Overview" className="nav-link"><Activity size={16} />Overview</NavLink><NavLink href="/events" aria-label="Events" className="nav-link"><CalendarDays size={16} />Events</NavLink><NavLink href="/admins" aria-label="Admins" className="nav-link"><LockKeyhole size={16} />Admins</NavLink><NavLink href="/announcements" aria-label="Announcements" className="nav-link"><Bell size={16} />Announcements</NavLink><NavLink href="/account" aria-label="Account" className="nav-link"><LockKeyhole size={16} />Account</NavLink><NavLink href="/setup" aria-label="Setup" className="nav-link"><Settings2 size={16} />Setup</NavLink></nav><div className="topbar-meta"><span className="role-chip"><span />Admin space</span><span className="avatar-placeholder" aria-label="Admin app">A</span></div></div></header>
-    <main className="page-wrap">{children}</main>
+    <header className="topbar"><div className="topbar-inner"><Brand /><AdminNavigationMenu /><div className="topbar-meta"><span className="role-chip"><span />Admin space</span><Link href="/account" className="avatar-placeholder" aria-label="Open admin account">A</Link></div></div></header>
+    <main className="page-wrap"><ScrollReveal />{children}</main>
     <footer className="site-footer"><span>TechSpace | Launchpad Control</span><span>Event operations, made clear.</span></footer>
   </div></IdentityProvider>;
 }

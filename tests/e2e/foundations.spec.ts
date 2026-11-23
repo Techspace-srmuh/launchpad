@@ -50,7 +50,7 @@ for (const surface of surfaces) {
     page.on("pageerror", (error) => errors.push(error.message));
     const eventId = "00000000-0000-4000-8000-000000000001";
     const routes = surface.name === "student"
-      ? [`/events/${eventId}/materials`, "/announcements", "/events", `/events/${eventId}`, "/my-events", "/profile"]
+      ? [`/events/${eventId}/materials`, "/announcements", "/events", `/events/${eventId}`, "/my-events", "/profile", "/settings"]
       : [`/events/${eventId}/materials`, `/events/${eventId}/export`, "/announcements", "/admins", "/events", "/events/new", `/events/${eventId}/attendance`, `/events/${eventId}/edit`, `/events/${eventId}/participants`, "/profile"];
     for (const route of routes) {
       const response = await page.goto(`${surface.origin}${route}`);
@@ -61,6 +61,14 @@ for (const surface of surfaces) {
     const studentMobile = surface.name === "student" && (page.viewportSize()?.width ?? 0) <= 700;
     if (studentMobile) {
       await expect(page.getByRole("heading", { name: /Prepare your/ })).toBeVisible();
+      await page.goto(`${surface.origin}/account`);
+    } else if (surface.name === "student") {
+      await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Setup", exact: true })).toHaveCount(0);
+      await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Explore Events", exact: true })).toBeVisible();
+      await page.getByRole("button", { name: "Open account menu for Student" }).click();
+      await expect(page.getByRole("menuitem", { name: "Account Settings" })).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("menuitem", { name: "Account Settings" })).toHaveCount(0);
       await page.goto(`${surface.origin}/account`);
     } else {
       await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Setup", exact: true })).toHaveAttribute("aria-current", "page");
