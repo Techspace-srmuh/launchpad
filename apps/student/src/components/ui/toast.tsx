@@ -352,7 +352,7 @@ function show(
   { description, action, ...options }: ToastOptions = {},
 ) {
   return sonner.custom(
-    (id) => (
+    (id: string | number) => (
       <ToastCard
         toastId={id}
         type={type}
