@@ -154,9 +154,9 @@ function BellIcon({
 // this only moves the way the count moved, so the digits roll the right way
 function DigitColumn({ value, reduced }: { value: number; reduced: boolean }) {
   const position = useSpring(value, COLUMN_SPRING);
-  const y = useTransform(position, (p) => `${-p * 100}%`);
+  const y = useTransform(position, (p: number) => `${-p * 100}%`);
   const velocity = useVelocity(position);
-  const mask = useTransform(velocity, (v) => {
+  const mask = useTransform(velocity, (v: number) => {
     const fade = Math.min(ROLL_FADE, (Math.abs(v) / ROLL_VELOCITY) * ROLL_FADE);
     return `linear-gradient(to bottom, transparent 0%, #000 ${fade}%, #000 ${100 - fade}%, transparent 100%)`;
   });
