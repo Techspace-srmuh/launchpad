@@ -1,0 +1,18 @@
+-- Enable Realtime publication for announcements
+begin;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'announcements'
+  ) then
+    alter publication supabase_realtime add table public.announcements;
+  end if;
+end $$;
+
+alter table public.announcements replica identity full;
+
+commit;

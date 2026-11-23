@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { isProfileComplete, useIdentity, workflowError } from "@launchpad/supabase";
 import { Button } from "@launchpad/ui";
+import { ArrowRight, ShieldCheck, UserRound } from "lucide-react";
 import { browserConfig } from "../lib/config";
 
 export function AccessGate({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
@@ -76,13 +77,13 @@ export function AccountPage() {
     catch (failure) { setError(workflowError(failure)); }
     finally { setBusy(false); }
   }
-  return <section className="workflow-panel"><h1>Account</h1>
+  return <section className="account-layout workflow-section"><div className="account-intro"><span className="eyebrow"><ShieldCheck size={15} /> CONTROL ROOM ACCESS</span><h1>Your admin space.</h1><p>Sign in to manage TechSpace events and the people who attend them.</p><span className="account-intro-art" aria-hidden="true"><ShieldCheck size={94} strokeWidth={1.2} /></span></div><div className="workflow-panel account-card"><span className="account-card-icon"><UserRound size={22} /></span><h2>Account</h2>
     {!client ? <p>MAIN Supabase settings are missing. <Link href="/setup">View setup</Link>.</p> : loading ? <p role="status">Checking your account…</p> : session ? <>
       <p>Signed in as <strong>{session.user.email}</strong></p>
       {!isProfileComplete(profile) && <p>Complete your student details to register for events. No manual approval is required.</p>}
       <div className="workflow-actions">
         {!isProfileComplete(profile) ? <Button asChild><Link href="/profile">Complete student profile</Link></Button> : <Link href="/profile">Edit student profile</Link>}
-        <Link href="/events">Open events</Link>
+        <Link href="/events">Open events <ArrowRight size={15} /></Link>
         {isAdmin && <Link href="/admins">Manage admin access</Link>}
         <Button disabled={busy} variant="outline" onClick={() => void signOut()}>Sign out</Button>
       </div>
@@ -92,7 +93,7 @@ export function AccountPage() {
       {(process.env.NODE_ENV === "development") && <form onSubmit={(event) => void signIn(event)} className="workflow-form"><p>Development access uses real test accounts provisioned in Supabase. It does not grant admin permission.</p><label>Email<input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label><Button disabled={busy} type="submit">{busy ? "Signing in…" : "Sign in"}</Button></form>}
     </>}
     {(error || identityError) && <p role="alert">{error || identityError}</p>}
-  </section>;
+  </div></section>;
 }
 
 export function ProfilePage() {
@@ -112,7 +113,7 @@ export function ProfilePage() {
     } catch (failure) { setError(workflowError(failure)); }
     finally { setBusy(false); }
   }
-  return <section className="workflow-panel"><h1>Student profile</h1>
+  return <section className="workflow-section admin-profile-page"><div className="profile-intro"><span className="eyebrow"><UserRound size={15} /> ACCOUNT DETAILS</span><h1>Profile details</h1><p>Keep your personal details up to date. These details are self-declared.</p></div><div className="workflow-panel profile-form-card"><h2>Student registration details</h2>
     <p>Complete your details once to register for events immediately. No manual university approval is required. These are self-declared details.</p>
     <form key={profile?.user_id ?? "new"} onSubmit={(event) => void save(event)} className="workflow-form">
       <label>Full name<input name="full_name" autoComplete="name" required maxLength={120} defaultValue={profile?.full_name ?? ""} /></label>
@@ -127,5 +128,5 @@ export function ProfilePage() {
       <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save profile"}</Button>
     </form>
     {error && <p role="alert">{error}</p>}{message && <><p role="status">{message}</p><Link href="/events">Explore events</Link></>}
-  </section>;
+  </div></section>;
 }

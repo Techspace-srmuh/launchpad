@@ -3,13 +3,16 @@
 import "../onboarding-theme.css";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, CalendarCheck2, BookOpen, PencilLine, UserRound, GraduationCap, IdCard, Mail, Network, Phone, ChartNoAxesColumnIncreasing, Building2, UsersRound, ChevronDown, type LucideIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarCheck2, BookOpen, PencilLine, Settings2, UserRound, GraduationCap, IdCard, Mail, Network, Phone, ChartNoAxesColumnIncreasing, Building2, UsersRound, ChevronDown, type LucideIcon } from "lucide-react";
 import { isProfileComplete, useIdentity, workflowError } from "@launchpad/supabase";
 import { Button } from "@launchpad/ui";
 import { browserConfig } from "../lib/config";
 import { AstronautDoodle } from "../components/space-doodles";
 import { LaunchpadBrand, MoonHorizon } from "./onboarding";
+
+const RailToc = dynamic(() => import("../components/ui/rail-toc").then((module) => module.RailToc));
 
 export function AccessGate({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
   const identity = useIdentity();
@@ -210,8 +213,61 @@ export function ProfilePage() {
   return <section className="profile-overview">
     <header className="profile-overview-heading"><div><span className="eyebrow">YOUR LAUNCHPAD PROFILE</span><h1>Good to have you here.</h1><p>Your student details and shortcuts to your Launchpad activity.</p></div><AstronautDoodle scene="flag" className="profile-overview-art" /></header>
     <section className="profile-overview-card" aria-labelledby="student-name"><div className="profile-avatar" aria-hidden="true"><UserRound /></div><div className="profile-overview-identity"><span className="profile-overview-label">STUDENT PROFILE</span><h2 id="student-name">{profile.full_name}</h2><p>{profile.course} · {profile.branch}</p><p>{profile.department}{profile.section ? ` · Section ${profile.section}` : ""} · Current year of study: {profile.academic_year}</p><p className="profile-roll">Registration number <strong>{profile.roll_number}</strong></p></div><Button variant="outline" onClick={() => setEditing(true)}><PencilLine aria-hidden="true" /> Edit profile</Button></section>
-    <nav className="profile-overview-links" aria-label="Profile shortcuts"><Link href="/my-events"><CalendarCheck2 aria-hidden="true" /><span><strong>My attendance</strong><small>View your event registrations and check-ins</small></span><ArrowRight aria-hidden="true" /></Link><Link href="/events"><BookOpen aria-hidden="true" /><span><strong>Event resources</strong><small>Open materials shared with event participants</small></span><ArrowRight aria-hidden="true" /></Link></nav>
+    <nav className="profile-overview-links" aria-label="Profile shortcuts"><Link href="/my-events"><CalendarCheck2 aria-hidden="true" /><span><strong>My attendance</strong><small>View your event registrations and check-ins</small></span><ArrowRight aria-hidden="true" /></Link><Link href="/events"><BookOpen aria-hidden="true" /><span><strong>Event resources</strong><small>Open materials shared with event participants</small></span><ArrowRight aria-hidden="true" /></Link><Link href="/settings"><Settings2 aria-hidden="true" /><span><strong>Settings</strong><small>Update your student details and manage your session</small></span><ArrowRight aria-hidden="true" /></Link></nav>
     <div className="profile-overview-account"><span><strong>Account</strong><small>Signed in with your Google account</small></span><Button variant="outline" disabled={busy} onClick={() => void signOut()}>{busy ? "Signing out…" : "Sign out"}</Button></div>
     {error && <p role="alert">{error}</p>}
+  </section>;
+}
+
+const settingsSections = [
+  { id: "profile-details", label: "Profile details" },
+  { id: "sign-in-account", label: "Sign-in account" },
+  { id: "data-and-links", label: "Data and links" },
+];
+
+export function SettingsPage() {
+  const { client, session, profile, loading } = useIdentity();
+  const [editing, setEditing] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  if (loading) return <p role="status">Loading settings…</p>;
+  if (!profile || !isProfileComplete(profile)) return <section className="workflow-panel state-panel"><h1>Complete your profile</h1><p>Your student details are needed before you can manage settings.</p><Link href="/profile">Open profile</Link></section>;
+  if (editing) return <ProfileEditor key={`${profile.user_id}-settings`} profile={profile} onCancel={() => setEditing(false)} onSaved={() => { setEditing(false); setSaved(true); }} />;
+
+  async function signOut() {
+    if (!client) return;
+    setBusy(true); setError("");
+    try {
+      const result = await client.auth.signOut();
+      if (result.error) throw result.error;
+    } catch (failure) { setError(workflowError(failure)); }
+    finally { setBusy(false); }
+  }
+
+  return <section className="workflow-section settings-page">
+    <div className="workflow-heading"><div><span className="eyebrow">YOUR LAUNCHPAD</span><h1>Settings</h1><p>Keep your student details current and manage this session.</p></div></div>
+    {saved && <p className="settings-saved" role="status">Your profile changes were saved.</p>}
+    <div className="settings-layout">
+      <aside className="settings-toc"><RailToc items={settingsSections} title="Settings sections" /></aside>
+      <div className="settings-content">
+        <section id="profile-details" className="workflow-panel settings-card" aria-labelledby="profile-details-title">
+          <div className="settings-card-heading"><div><span className="eyebrow">STUDENT PROFILE</span><h2 id="profile-details-title">Profile details</h2><p>These self-declared details are used for event registration.</p></div><Button variant="outline" onClick={() => { setSaved(false); setEditing(true); }}><PencilLine size={16} aria-hidden="true" /> Edit details</Button></div>
+          <dl className="settings-details"><div><dt>Full name</dt><dd>{profile.full_name}</dd></div><div><dt>Registration number</dt><dd>{profile.roll_number} <small>Cannot be changed</small></dd></div><div><dt>Course and branch</dt><dd>{profile.course} · {profile.branch}</dd></div><div><dt>Department and section</dt><dd>{profile.department} · {profile.section}</dd></div><div><dt>Year of study</dt><dd>{profile.academic_year}</dd></div><div><dt>Mobile number</dt><dd>{profile.mobile_number}</dd></div></dl>
+        </section>
+        <section id="sign-in-account" className="workflow-panel settings-card" aria-labelledby="sign-in-account-title">
+          <div className="settings-card-heading"><div><span className="eyebrow">ACCOUNT</span><h2 id="sign-in-account-title">Sign-in account</h2><p>Your sign-in email is managed by {session?.user.app_metadata?.provider === "google" ? "your Google account" : "your sign-in provider"}.</p></div></div>
+          <dl className="settings-details"><div><dt>Email</dt><dd>{session?.user.email ?? "Unavailable"}</dd></div></dl>
+          <Button variant="outline" disabled={busy} onClick={() => void signOut()}>{busy ? "Signing out…" : "Sign out"}</Button>
+          {error && <p role="alert">{error}</p>}
+        </section>
+        <section id="data-and-links" className="workflow-panel settings-card" aria-labelledby="data-and-links-title">
+          <span className="eyebrow">YOUR DATA</span><h2 id="data-and-links-title">Data and links</h2>
+          <p>Event registrations and attendance are available in <Link href="/my-events">My Events</Link>. Shared Drive and Photos links follow the access settings chosen by their owners.</p>
+          <p>Profile details are self-declared and do not indicate university verification.</p>
+        </section>
+      </div>
+    </div>
   </section>;
 }

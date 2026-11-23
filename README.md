@@ -104,6 +104,17 @@ npm run dev:admin
 | Launchpad | `http://127.0.0.1:5173` | `npm run build:student` | `apps/student/.next` |
 | Launchpad Control | `http://127.0.0.1:5174` | `npm run build:admin` | `apps/admin/.next` |
 
+For a phone on the same trusted Wi-Fi, `npm run dev:student` also listens on the laptop's LAN address. Find the Wi-Fi IPv4 address with `ipconfig` and open `http://<IPv4>:5173` on the phone. The student Next.js dev server allows the laptop's current local IPv4 addresses for its development resources; restart it if the network address changes. Control remains bound to `127.0.0.1` unless its dev command is explicitly changed.
+
+If the phone cannot connect, check that the Wi-Fi is a private/trusted network and that Windows Firewall permits inbound TCP 5173 on the Private profile. The laptop loading its own LAN URL does not prove another device can reach it. Google sign-in from the phone requires temporary MAIN Supabase Auth URL Configuration changes because a LAN IP in Redirect URLs alone falls back to the Site URL; see the [Google setup runbook](docs/runbooks/google-auth.md). HTTP LAN access is for layout and basic browser checks; PWA install/service workers and camera checks require a secure context such as HTTPS.
+
+On a trusted Wi-Fi that Windows still labels Public, open PowerShell **as Administrator** and run the following once (skip the rule if it already exists):
+
+```powershell
+Set-NetConnectionProfile -InterfaceAlias "Wi-Fi" -NetworkCategory Private
+New-NetFirewallRule -DisplayName "Launchpad Student Dev" -Direction Inbound -Protocol TCP -LocalPort 5173 -RemoteAddress LocalSubnet -Action Allow -Profile Private
+```
+
 Both apps use Next.js 16 App Router with file-based routes, shared workspace packages and Tailwind PostCSS. After building, `npm run start:student` and `npm run start:admin` run production servers on the same ports. The `.next` folders need a Next.js runtime. For Vercel, import this repository twice with roots `apps/student` and `apps/admin`; see the [deployment guide](docs/runbooks/frontend-deployment.md). No Vercel project or deployment has been created.
 
 The app shells run without Supabase credentials and explain missing configuration on their setup pages; event workflows require MAIN configuration and migrations. Copy each app's `.env.example` to `.env.local` in that same app directory, fill in the public values, and restart the dev server:

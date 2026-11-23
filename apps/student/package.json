@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev --hostname 127.0.0.1 --port 5173",
+    "dev": "next dev --hostname 0.0.0.0 --port 5173",
     "build": "next build",
     "typecheck": "next typegen && tsc --noEmit",
     "start": "next start --hostname 127.0.0.1 --port 5173"
@@ -12,10 +12,13 @@
   "dependencies": {
     "@launchpad/supabase": "*",
     "@launchpad/ui": "*",
+    "cn": "^0.5.2",
+    "figma-squircle": "^1.1.0",
     "lucide-react": "^0.468.0",
+    "motion": "^14.14.0",
+    "next": "^16.4.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "^16.4.6"
-  },
-  "devDependencies": {}
+    "sonner": "^2.0.8"
+  }
 }

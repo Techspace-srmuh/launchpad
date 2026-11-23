@@ -5,6 +5,7 @@ import "../index.css";
 import "../student-theme.css";
 import "../reference-theme.css";
 import "../onboarding-theme.css";
+import "../student-redesign.css";
 
 export const metadata: Metadata = { title: "Launchpad - TechSpace", description: "Launchpad — your universe, your events, your community." };
 export const viewport: Viewport = { themeColor: "#ffffff", viewportFit: "cover" };
