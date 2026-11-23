@@ -56,6 +56,8 @@
 .student-header-search:hover, .student-header-search:focus-visible { border-color: #dbc779; background: #fff; box-shadow: 0 4px 14px #2020240b; }
 .student-header-icon { display: grid; place-items: center; width: 39px; height: 39px; border: 1px solid #e6e8ec; border-radius: 12px; color: #444b55; background: #fff; transition: border-color .18s ease, background .18s ease; }
 .student-header-icon:hover, .student-header-icon.is-active { border-color: #edda9c; background: #fff8e2; }
+.student-nav-badge { margin-left: auto; padding: 1px 7px; border-radius: 9999px; background: #ff3b30; color: #fff; font-size: 11px; font-weight: 700; line-height: 1.4; }
+.student-mobile-badge { position: absolute; top: 6px; right: calc(50% - 18px); min-width: 16px; height: 16px; padding: 0 4px; display: grid; place-items: center; border-radius: 9999px; background: #ff3b30; color: #fff; font-size: 9px; font-weight: 800; line-height: 1; pointer-events: none; }
 .student-account-mobile { display: none; padding: 0; border: 0; }
 .student-mobile-nav { display: none; }
 .app-shell > .page-wrap { width: calc(100% - 238px); max-width: none; margin-left: 238px; padding: 0 clamp(24px, 4vw, 56px) 48px; }

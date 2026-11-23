@@ -1,31 +1,66 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  type ReactNode,
+} from "react";
+import { usePathname } from "next/navigation";
 import { useIdentity } from "@launchpad/supabase";
 import { toast } from "../components/ui/toast";
 import { AnnouncementModal, type AnnouncementItem } from "../components/announcement-modal";
 
 const LAST_SEEN_STORAGE_KEY = "launchpad_last_seen_announcement_id";
+const LAST_READ_TIME_STORAGE_KEY = "launchpad_announcements_last_read_time";
 
-/**
- * Calculates a jittered delay (in ms) to prevent thundering-herd database spikes
- * when an event-specific announcement is broadcast.
- */
-export function calculateJitterDelay(minMs = 1500, maxMs = 4000): number {
-  return Math.floor(minMs + Math.random() * (maxMs - minMs));
+interface AnnouncementNotificationContextType {
+  unreadCount: number;
+  markAllAsRead: () => void;
+  openAnnouncementModal: (announcement: AnnouncementItem) => void;
 }
 
-export function AnnouncementNotifier() {
+const AnnouncementNotificationContext = createContext<AnnouncementNotificationContextType>({
+  unreadCount: 0,
+  markAllAsRead: () => {},
+  openAnnouncementModal: () => {},
+});
+
+export function useAnnouncementNotifications() {
+  return useContext(AnnouncementNotificationContext);
+}
+
+export function AnnouncementNotifierProvider({ children }: { children: ReactNode }) {
   const { client, session } = useIdentity();
+  const pathname = usePathname();
   const [activeAnnouncement, setActiveAnnouncement] = useState<AnnouncementItem | null>(null);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
   const mountedRef = useRef(true);
 
+  const markAllAsRead = useCallback(() => {
+    try {
+      localStorage.setItem(LAST_READ_TIME_STORAGE_KEY, new Date().toISOString());
+    } catch {
+      // Ignore in restricted environments
+    }
+    setUnreadCount(0);
+  }, []);
+
+  // When visiting the announcements page, mark all as read
+  useEffect(() => {
+    if (pathname === "/announcements") {
+      markAllAsRead();
+    }
+  }, [pathname, markAllAsRead]);
+
   const displayAnnouncementToast = useCallback((item: AnnouncementItem) => {
-    // Record as seen so we don't toast the same announcement multiple times
     try {
       localStorage.setItem(LAST_SEEN_STORAGE_KEY, item.id);
     } catch {
-      // Ignore localStorage write errors in private browsing/sandboxed contexts
+      // Ignore in restricted environments
     }
 
     const snippet =
@@ -39,51 +74,69 @@ export function AnnouncementNotifier() {
           setActiveAnnouncement(item);
         },
       },
-      duration: 9000,
+      duration: 8000,
     });
   }, []);
 
-  // 1. "New on open" delayed check (2s after mount to not block initial page queries)
+  // 1. Initial check on mount: fetch latest announcement and unread count
   useEffect(() => {
     mountedRef.current = true;
     if (!client || !session) return;
 
     const timer = setTimeout(async () => {
       try {
-        const lastSeen = localStorage.getItem(LAST_SEEN_STORAGE_KEY);
-        // Query only the single most recent visible announcement (filtered by RLS)
+        const lastReadTime = localStorage.getItem(LAST_READ_TIME_STORAGE_KEY);
+        const lastSeenId = localStorage.getItem(LAST_SEEN_STORAGE_KEY);
+
+        // Fetch recent announcements
         const { data, error } = await client
           .from("announcements")
           .select("id,event_id,title,body,link_url,audience,published_at")
           .order("published_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .limit(10);
 
         if (error || !data || !mountedRef.current) return;
 
-        const latest = data as AnnouncementItem;
-        if (latest.id !== lastSeen) {
+        const items = data as AnnouncementItem[];
+        if (items.length === 0) return;
+
+        // Calculate unread count based on lastReadTime
+        if (lastReadTime) {
+          const unread = items.filter(
+            (item) => new Date(item.published_at).getTime() > new Date(lastReadTime).getTime(),
+          ).length;
+          setUnreadCount(unread);
+        } else {
+          // If first time, show unread count for items from past 7 days
+          const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+          const unread = items.filter(
+            (item) => new Date(item.published_at).getTime() > sevenDaysAgo,
+          ).length;
+          setUnreadCount(unread);
+        }
+
+        // Show toast if the very latest announcement hasn't been toasted yet
+        const latest = items[0];
+        if (latest && latest.id !== lastSeenId && pathname !== "/announcements") {
           displayAnnouncementToast(latest);
         }
       } catch {
-        // Silently skip if network or auth is temporarily unavailable
+        // Silently skip
       }
-    }, 2000);
+    }, 300);
 
     return () => {
       clearTimeout(timer);
       mountedRef.current = false;
     };
-  }, [client, session, displayAnnouncementToast]);
+  }, [client, session, pathname, displayAnnouncementToast]);
 
-  // 2. Realtime listener for immediate broadcast with database load protection
+  // 2. Realtime listener: instant trigger when admin publishes
   useEffect(() => {
     if (!client || !session) return;
 
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
     const channel = client
-      .channel("public-announcements-notifications")
+      .channel("realtime-announcements-notifications")
       .on(
         "postgres_changes",
         {
@@ -105,50 +158,53 @@ export function AnnouncementNotifier() {
             published_at: newRow.published_at ?? new Date().toISOString(),
           };
 
-          // Database Load Protection:
-          // A) Club-wide announcements require ZERO database reads!
+          // A) Club-wide announcements: instant zero-query toast
           if (announcement.audience === "all_students") {
+            setUnreadCount((c) => c + 1);
             displayAnnouncementToast(announcement);
             return;
           }
 
-          // B) Event-specific announcements:
-          // Stagger queries across clients using randomized jitter delay (1.5s - 4.0s)
-          // so Supabase connection pools never get overwhelmed.
+          // B) Event-specific announcements: check enrollment
           if (announcement.audience === "event_registrants" && announcement.event_id) {
-            const jitterMs = calculateJitterDelay();
-            timeoutId = setTimeout(async () => {
-              try {
-                // Verify the student is registered for this event
-                const { data } = await client
-                  .from("registrations")
-                  .select("id")
-                  .eq("event_id", announcement.event_id as string)
-                  .eq("user_id", session.user.id)
-                  .maybeSingle();
+            try {
+              const { data } = await client
+                .from("registrations")
+                .select("id")
+                .eq("event_id", announcement.event_id)
+                .eq("user_id", session.user.id)
+                .maybeSingle();
 
-                if (data && mountedRef.current) {
-                  displayAnnouncementToast(announcement);
-                }
-              } catch {
-                // Graceful ignore
+              if (data && mountedRef.current) {
+                setUnreadCount((c) => c + 1);
+                displayAnnouncementToast(announcement);
               }
-            }, jitterMs);
+            } catch {
+              // Silently ignore
+            }
           }
         },
       )
       .subscribe();
 
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
       void client.removeChannel(channel);
     };
   }, [client, session, displayAnnouncementToast]);
 
   return (
-    <AnnouncementModal
-      announcement={activeAnnouncement}
-      onClose={() => setActiveAnnouncement(null)}
-    />
+    <AnnouncementNotificationContext.Provider
+      value={{
+        unreadCount,
+        markAllAsRead,
+        openAnnouncementModal: setActiveAnnouncement,
+      }}
+    >
+      {children}
+      <AnnouncementModal
+        announcement={activeAnnouncement}
+        onClose={() => setActiveAnnouncement(null)}
+      />
+    </AnnouncementNotificationContext.Provider>
   );
 }

@@ -13,14 +13,15 @@ import { StudentDashboard } from "../features/student-dashboard";
 import { OnboardingPage } from "../features/onboarding";
 import { StudentHeader, StudentMobileNav, StudentSidebar } from "./student-navigation";
 import { Toaster } from "./ui/toast";
-import { AnnouncementNotifier } from "../features/announcement-notifier";
+import { AnnouncementNotifierProvider } from "../features/announcement-notifier";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <IdentityProvider config={browserConfig.ok ? browserConfig.config : null}>
-      <StudentShell>{children}</StudentShell>
-      <AnnouncementNotifier />
-      <Toaster position="top-center" />
+      <AnnouncementNotifierProvider>
+        <StudentShell>{children}</StudentShell>
+        <Toaster position="top-center" />
+      </AnnouncementNotifierProvider>
     </IdentityProvider>
   );
 }
