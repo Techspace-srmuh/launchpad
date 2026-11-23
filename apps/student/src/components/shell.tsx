@@ -1,41 +1,28 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Bell, Bookmark, CalendarDays, CircleHelp, Compass, Orbit, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleHelp, Orbit } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import type { ComponentProps } from "react";
 import type { ReactNode } from "react";
-import { Button, cn } from "@launchpad/ui";
+import { Button, cn, ScrollReveal } from "@launchpad/ui";
 import { IdentityProvider, isProfileComplete, useIdentity } from "@launchpad/supabase";
 
 import { browserConfig } from "../lib/config";
-import { StudentDashboard } from "../features/dashboard";
+import { StudentDashboard } from "../features/student-dashboard";
 import { OnboardingPage } from "../features/onboarding";
-import { AstronautDoodle } from "./space-doodles";
-
-function NavLink({ href, className, ...props }: ComponentProps<typeof Link>) {
-  const pathname = usePathname();
-  const active = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
-  return <Link href={href} aria-current={active ? "page" : undefined} className={cn(className, active && "nav-link-active")} {...props} />;
-}
-
-function Brand() {
-  return <Link href="/" className="brand" aria-label="TechSpace Launchpad home"><span className="brand-mark"><AstronautDoodle scene="planet" className="brand-planet" /></span><span className="brand-words"><strong>TechSpace</strong><span>Launchpad</span></span></Link>;
-}
-
-function SetupNotice() {
-  return (
-    <div className={cn("setup-notice", browserConfig.ok ? "setup-notice-ready" : "")} role="status">
-      <span className="notice-indicator" />
-      <span>{browserConfig.ok ? "Browser configuration is ready" : "Setup needed to connect Launchpad"}</span>
-      <Link href="/setup" className="notice-link">View setup <ArrowRight size={14} /></Link>
-    </div>
-  );
-}
+import { StudentHeader, StudentMobileNav, StudentSidebar } from "./student-navigation";
+import { Toaster } from "./ui/toast";
+import { AnnouncementNotifier } from "../features/announcement-notifier";
 
 export function AppShell({ children }: { children: ReactNode }) {
-  return <IdentityProvider config={browserConfig.ok ? browserConfig.config : null}><StudentShell>{children}</StudentShell></IdentityProvider>;
+  return (
+    <IdentityProvider config={browserConfig.ok ? browserConfig.config : null}>
+      <StudentShell>{children}</StudentShell>
+      <AnnouncementNotifier />
+      <Toaster position="bottom-right" />
+    </IdentityProvider>
+  );
 }
 
 function StudentShell({ children }: { children: ReactNode }) {
@@ -45,37 +32,25 @@ function StudentShell({ children }: { children: ReactNode }) {
   const { session, profile, loading } = identity;
   const publicRoute = pathname === "/" || pathname === "/welcome" || pathname === "/account" || pathname === "/setup";
   const destination = !browserConfig.ok || loading || identity.error ? null
-    : !session ? publicRoute ? null : "/"
+    : !session ? publicRoute ? null : "/account"
     : !isProfileComplete(profile)
       ? pathname === "/profile" || pathname === "/account" || pathname === "/setup" ? null : "/profile"
-      : pathname === "/welcome" ? "/" : null;
+      : pathname === "/welcome" ? "/" : pathname === "/account" ? "/settings" : null;
 
   useEffect(() => { if (destination) router.replace(destination); }, [destination, router]);
 
   if (loading && pathname !== "/account" && pathname !== "/setup") return <main className="onboarding-shell" role="status">Checking your account.</main>;
-  if (destination) return <main className="onboarding-shell" role="status">Opening {destination === "/profile" ? "your profile" : "onboarding"}.</main>;
+  if (destination) return <main className="onboarding-shell" role="status">Opening {destination === "/profile" ? "your profile" : destination === "/settings" ? "settings" : destination === "/account" ? "sign in" : "Launchpad"}.</main>;
   if (identity.error && !publicRoute && pathname !== "/profile") return <main className="workflow-panel"><h1>Account access could not be checked</h1><p role="alert">{identity.error}</p><Button onClick={() => void identity.refresh()}>Retry</Button><Link href="/account">Open account</Link></main>;
   if (pathname === "/welcome" || pathname === "/account" || (pathname === "/" && !session) || (pathname === "/profile" && !isProfileComplete(profile))) {
-    return <main className="onboarding-shell">{children}</main>;
+    return <main className="onboarding-shell"><ScrollReveal />{children}</main>;
   }
   return (
     <div className="app-shell">
-      <header className="topbar">
-        <div className="topbar-inner"><Brand />
-          <nav className="main-nav" aria-label="Main navigation">
-            <NavLink href="/" aria-label="Home" className="nav-link"><Compass size={16} />Home</NavLink>
-            <NavLink href="/events" aria-label="Events" className="nav-link"><CalendarDays size={17} />Explore Events</NavLink><NavLink href="/my-events" aria-label="My events" className="nav-link"><Bookmark size={17} />My Events</NavLink><NavLink href="/announcements" aria-label="Announcements" className="nav-link"><Bell size={17} />Announcements</NavLink><NavLink href="/profile" aria-label="Profile" className="nav-link"><UserRound size={17} />Profile</NavLink><NavLink href="/account" aria-label="Account" className="nav-link"><UserRound size={17} />Account</NavLink><NavLink href="/setup" aria-label="Setup" className="nav-link"><CircleHelp size={17} />Setup</NavLink>
-          </nav>
-          <div className="topbar-meta"><NavLink href="/announcements" className="header-icon-link" aria-label="Announcements"><Bell size={23} /></NavLink><NavLink href="/account" className="header-icon-link header-account-link" aria-label="Account"><UserRound size={23} /></NavLink></div>
-        </div>
-      </header>
-      <main className="page-wrap">{children}</main>
-      <nav className="mobile-nav" aria-label="Mobile navigation">
-        <NavLink href="/" className="mobile-nav-link"><Compass size={23} />Home</NavLink>
-        <NavLink href="/events" className="mobile-nav-link"><CalendarDays size={23} />Events</NavLink>
-        <NavLink href="/my-events" className="mobile-nav-link"><Bookmark size={23} />My Events</NavLink>
-        <NavLink href="/profile" className="mobile-nav-link"><UserRound size={23} />Profile</NavLink>
-      </nav>
+      <StudentSidebar />
+      <StudentHeader />
+      <main className="page-wrap"><ScrollReveal />{children}</main>
+      <StudentMobileNav />
       <footer className="site-footer"><span>TechSpace | Launchpad</span><span>Your universe. Your events. Your community.</span></footer>
     </div>
   );
@@ -83,7 +58,7 @@ function StudentShell({ children }: { children: ReactNode }) {
 
 export function HomePage() {
   const { session } = useIdentity();
-  return session ? <><SetupNotice /><StudentDashboard /></> : <OnboardingPage />;
+  return session ? <StudentDashboard /> : <OnboardingPage />;
 }
 
 export function SetupPage() {
