@@ -171,6 +171,12 @@
   .student-nav-link, .student-account-trigger, .student-header-search, .student-header-icon, .student-dashboard-card, .student-dashboard-notice, .student-featured-actions a, .student-next-panel svg, .student-card-arrow, .student-dashboard-notice > svg { transition: none; }
 }
 
+/* Sonner Toast positioning with notch/safe area support */
+[data-sonner-toaster][data-y-position="top"] {
+  top: max(16px, env(safe-area-inset-top, 16px)) !important;
+  z-index: 99999 !important;
+}
+
 /* Announcement In-Place Modal */
 .announcement-modal-backdrop {
   position: fixed;

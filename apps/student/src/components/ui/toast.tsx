@@ -415,7 +415,7 @@ export type RareToasterProps = Omit<
 >;
 
 export function Toaster({
-  position = "bottom-right",
+  position = "top-center",
   gap = 10,
   toastOptions,
   ...props

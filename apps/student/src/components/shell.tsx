@@ -20,7 +20,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <IdentityProvider config={browserConfig.ok ? browserConfig.config : null}>
       <StudentShell>{children}</StudentShell>
       <AnnouncementNotifier />
-      <Toaster position="bottom-right" />
+      <Toaster position="top-center" />
     </IdentityProvider>
   );
 }
