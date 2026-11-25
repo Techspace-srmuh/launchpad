@@ -5,8 +5,14 @@ import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { AstronautDoodle } from "../components/space-doodles";
-import { OnboardingIllustration, type OnboardingScene } from "../components/onboarding-illustration";
-import { RocketSweepHeading, SequentialDescription } from "../components/onboarding-typography";
+import {
+  OnboardingIllustration,
+  type OnboardingScene,
+} from "../components/onboarding-illustration";
+import {
+  RocketSweepHeading,
+  SequentialDescription,
+} from "../components/onboarding-typography";
 
 interface StepConfig {
   headingLines: readonly string[];
@@ -36,10 +42,10 @@ const steps: readonly StepConfig[] = [
   },
   {
     headingLines: ["Participate & Grow"],
-    body: "Register, attend, access resources and get certified for your achievements.",
+    body: "Join events, track your attendance, and access resources shared by TechSpace.",
     fallbackBodyLines: [
-      "Register, attend, access resources",
-      "and get certified for your achievements.",
+      "Join events, track your attendance,",
+      "and access resources shared by TechSpace.",
     ],
     scene: "flag",
   },
@@ -47,7 +53,11 @@ const steps: readonly StepConfig[] = [
 
 export function LaunchpadBrand() {
   return (
-    <Link href="/" className="onboarding-brand" aria-label="TechSpace Launchpad home">
+    <Link
+      href="/"
+      className="onboarding-brand"
+      aria-label="TechSpace Launchpad home"
+    >
       <AstronautDoodle scene="planet" />
       <span>
         <strong>TechSpace</strong>
@@ -87,9 +97,11 @@ export function OnboardingPage() {
       setStep(next);
       setHeadingCompleted(false);
       setAnimKey((prev) => prev + 1);
-      requestAnimationFrame(() => titleRef.current?.focus({ preventScroll: true }));
+      requestAnimationFrame(() =>
+        titleRef.current?.focus({ preventScroll: true }),
+      );
     },
-    [step]
+    [step],
   );
 
   const handleHeadingComplete = useCallback(() => {
@@ -136,93 +148,99 @@ export function OnboardingPage() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* 1. Illustration Stage */}
-      <div className={`intro-scene ${slideAnimClass}`}>
-        <div
-          className={`onboarding-slide-layer ${step === 0 ? "is-active" : "is-inactive"}`}
-          aria-hidden={step !== 0}
-        >
-          <OnboardingIllustration scene="coding" priority={step === 0} />
-        </div>
-        <div
-          className={`onboarding-slide-layer ${step === 1 ? "is-active" : "is-inactive"}`}
-          aria-hidden={step !== 1}
-        >
-          <OnboardingIllustration scene="rocket" priority={step === 1} isActive={step === 1} />
-        </div>
-        <div
-          className={`onboarding-slide-layer ${step === 2 ? "is-active" : "is-inactive"}`}
-          aria-hidden={step !== 2}
-        >
-          <OnboardingIllustration scene="flag" priority={step === 2} />
-        </div>
-      </div>
-
-      {/* Keep the animated heading and description together in natural flow. */}
-      <div className="intro-copy">
-        <div className="intro-heading-container" key={`heading-box-${animKey}`}>
-          <RocketSweepHeading
-            key={`heading-${animKey}`}
-            lines={current.headingLines}
-            hasRays={step === 0}
-            titleRef={titleRef}
-            onComplete={handleHeadingComplete}
-          />
-        </div>
-
-        <div className="intro-description-container" key={`desc-box-${animKey}`}>
-          <SequentialDescription
-            key={`desc-${animKey}`}
-            text={current.body}
-            fallbackLines={current.fallbackBodyLines}
-            canStart={headingCompleted}
-          />
-        </div>
-      </div>
-
-      {/* 4. Pagination Indicators */}
-      <nav className="intro-pagination" aria-label="Introduction slides">
-        {steps.map((item, index) => (
-          <button
-            key={item.scene}
-            type="button"
-            aria-label={`Go to slide ${index + 1}`}
-            aria-current={step === index ? "step" : undefined}
-            onClick={() => showStep(index)}
+      <header className="intro-brand">
+        <LaunchpadBrand />
+      </header>
+      <div className="intro-content">
+        {/* Illustration and copy form one natural-height group. */}
+        <div className={`intro-scene ${slideAnimClass}`}>
+          <div
+            className={`onboarding-slide-layer ${step === 0 ? "is-active" : "is-inactive"}`}
+            aria-hidden={step !== 0}
           >
-            <span />
-          </button>
-        ))}
-      </nav>
+            <OnboardingIllustration scene="coding" priority={step === 0} />
+          </div>
+          <div
+            className={`onboarding-slide-layer ${step === 1 ? "is-active" : "is-inactive"}`}
+            aria-hidden={step !== 1}
+          >
+            <OnboardingIllustration
+              scene="rocket"
+              priority={step === 1}
+              isActive={step === 1}
+            />
+          </div>
+          <div
+            className={`onboarding-slide-layer ${step === 2 ? "is-active" : "is-inactive"}`}
+            aria-hidden={step !== 2}
+          >
+            <OnboardingIllustration scene="flag" priority={step === 2} />
+          </div>
+        </div>
 
-      {/* 5. Navigation Buttons */}
-      <div className={`intro-actions ${step === 0 ? "intro-actions-welcome" : ""}`}>
-        {step === 0 ? (
-          <>
-            <button type="button" className="onboarding-primary" onClick={() => showStep(1)}>
-              Get Started <ArrowRight aria-hidden="true" />
-            </button>
-            <Link className="onboarding-secondary" href="/account">
-              I already have an account
-            </Link>
-          </>
-        ) : (
-          <>
-            <Link className="intro-skip" href="/account">
-              Skip
-            </Link>
-            {step < steps.length - 1 ? (
-              <button type="button" className="onboarding-primary" onClick={() => showStep(step + 1)}>
-                Next <ArrowRight aria-hidden="true" />
-              </button>
-            ) : (
-              <Link className="onboarding-primary" href="/account">
-                Next <ArrowRight aria-hidden="true" />
-              </Link>
-            )}
-          </>
-        )}
+        {/* Keep the animated heading and description together in natural flow. */}
+        <div className="intro-copy">
+          <div
+            className="intro-heading-container"
+            key={`heading-box-${animKey}`}
+          >
+            <RocketSweepHeading
+              key={`heading-${animKey}`}
+              lines={current.headingLines}
+              hasRays={step === 0}
+              titleRef={titleRef}
+              onComplete={handleHeadingComplete}
+            />
+          </div>
+
+          <div
+            className="intro-description-container"
+            key={`desc-box-${animKey}`}
+          >
+            <SequentialDescription
+              key={`desc-${animKey}`}
+              text={current.body}
+              fallbackLines={current.fallbackBodyLines}
+              canStart={headingCompleted}
+            />
+          </div>
+        </div>
       </div>
+      <footer className="intro-footer">
+        <nav className="intro-pagination" aria-label="Introduction slides">
+          {steps.map((item, index) => (
+            <button
+              key={item.scene}
+              type="button"
+              aria-label={`Go to slide ${index + 1}`}
+              aria-current={step === index ? "step" : undefined}
+              onClick={() => showStep(index)}
+            >
+              <span />
+            </button>
+          ))}
+        </nav>
+
+        <div className="intro-actions">
+          {step < steps.length - 1 ? (
+            <button
+              type="button"
+              className="onboarding-primary"
+              onClick={() => showStep(step + 1)}
+            >
+              {step === 0 ? "Get Started" : "Next"}{" "}
+              <ArrowRight aria-hidden="true" />
+            </button>
+          ) : (
+            <Link className="onboarding-primary" href="/account">
+              Continue to sign in <ArrowRight aria-hidden="true" />
+            </Link>
+          )}
+          <Link className="intro-secondary" href="/account">
+            {step === 0 ? "I already have an account" : "Skip introduction"}
+          </Link>
+        </div>
+      </footer>
     </section>
   );
 }

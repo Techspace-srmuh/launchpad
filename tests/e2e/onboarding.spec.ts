@@ -1,125 +1,132 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Student Onboarding UI - Visual Consistency and Sequential Matrix Typography", () => {
-  test("keeps descriptions close to natural-height headings across all slides", async ({
+  test("groups natural-height text and footer actions at mobile and desktop sizes", async ({
+    page,
+  }) => {
+    for (const [width, height] of [
+      [320, 568],
+      [375, 812],
+      [390, 844],
+      [430, 932],
+      [1440, 900],
+    ]) {
+      await page.setViewportSize({ width, height });
+      await page.goto("http://127.0.0.1:5173/welcome");
+      await expect(page.locator(".intro-brand")).toBeVisible();
+      for (let slide = 1; slide <= 3; slide++) {
+        await page
+          .getByRole("button", { name: `Go to slide ${slide}` })
+          .click();
+        await expect(page.locator(".desc-line-content").last()).toHaveCSS(
+          "opacity",
+          "1",
+        );
+        await expect(page.locator(".heading-line-content").last()).toHaveCSS(
+          "transform",
+          "matrix(1, 0, 0, 1, 0, 0)",
+        );
+        const geometry = await page.evaluate(() => {
+          const box = (selector: string) =>
+            document.querySelector(selector)!.getBoundingClientRect();
+          const h = box(".intro-heading"),
+            d = box(".intro-description"),
+            scene = box(".intro-scene");
+          const primary = box(".intro-actions .onboarding-primary"),
+            footer = box(".intro-footer"),
+            dots = box(".intro-pagination");
+          const lines = box(".intro-heading-lines");
+          return {
+            gap: d.top - h.bottom,
+            sceneGap: h.top - scene.bottom,
+            headingHeight: h.height,
+            linesHeight: lines.height,
+            actionGap: primary.top - dots.bottom,
+            actionWidth: primary.width,
+            footerWidth: footer.width,
+            actionHeight: primary.height,
+            overflow: document.documentElement.scrollWidth > innerWidth,
+            cardHeight: box(".intro-screen").height,
+          };
+        });
+        expect(geometry.gap).toBeCloseTo(12, 0);
+        expect(geometry.sceneGap).toBeCloseTo(24, 0);
+        expect(geometry.headingHeight).toBeCloseTo(geometry.linesHeight, 0);
+        expect(geometry.actionGap).toBeCloseTo(24, 0);
+        expect(geometry.actionWidth).toBeCloseTo(geometry.footerWidth, 0);
+        expect(geometry.actionHeight).toBeGreaterThanOrEqual(54);
+        expect(geometry.overflow).toBe(false);
+        if (width === 1440) expect(geometry.cardHeight).toBeLessThan(800);
+        if (slide !== 2) {
+          await expect(
+            page.locator(".is-active .onboarding-orbit-star"),
+          ).toHaveCount(2);
+          await expect(
+            page.locator(".is-active .onboarding-blinking-star"),
+          ).toHaveCount(2);
+        }
+      }
+    }
+  });
+
+  test("rocket fallback survives media failure and rejected autoplay", async ({
+    page,
+  }) => {
+    await page.route("**/rocket-animation.mp4", (route) => route.abort());
+    await page.goto("http://127.0.0.1:5173/welcome");
+    await page.getByRole("button", { name: "Get Started" }).click();
+    await expect(page.locator(".onboarding-art-rocket")).toBeVisible();
+    await expect(page.locator(".onboarding-video")).toBeHidden();
+    await page.unroute("**/rocket-animation.mp4");
+    await page.addInitScript(() => {
+      HTMLMediaElement.prototype.play = () =>
+        Promise.reject(new DOMException("Blocked", "NotAllowedError"));
+    });
+    await page.reload();
+    await page.getByRole("button", { name: "Get Started" }).click();
+    await expect(page.locator(".onboarding-art-rocket")).toBeVisible();
+    await expect(page.locator(".onboarding-video")).toBeHidden();
+  });
+
+  test("rocket playback resumes after repeated navigation and shows a reduced-motion poster", async ({
     page,
   }) => {
     await page.goto("http://127.0.0.1:5173/welcome");
-
-    // Slide 1: Welcome
-    await expect(page.getByRole("heading", { name: /Welcome to Launchpad/ })).toBeVisible();
-
-    const scene1 = page.locator(".intro-scene");
-    const headingBox1 = page.locator(".intro-heading");
-    const descBox1 = page.locator(".intro-description-container");
-    const pagination1 = page.locator(".intro-pagination");
-
-    await expect(scene1).toBeVisible();
-    await expect(headingBox1).toBeVisible();
-    await expect(descBox1).toBeVisible();
-    await expect(pagination1).toBeVisible();
-
-    const s1Box = await scene1.boundingBox();
-    const h1Box = await headingBox1.boundingBox();
-    const d1Box = await descBox1.boundingBox();
-    const p1Box = await pagination1.boundingBox();
-
-    expect(s1Box).not.toBeNull();
-    expect(h1Box).not.toBeNull();
-    expect(d1Box).not.toBeNull();
-    expect(p1Box).not.toBeNull();
-    expect((d1Box?.y ?? 0) - ((h1Box?.y ?? 0) + (h1Box?.height ?? 0))).toBeCloseTo(12, 0);
-
-    // Verify sunburst rays appear on slide 1
-    await expect(page.locator(".intro-rays")).toBeVisible();
-
-    // Verify animated stars and 2 revolving orbiting stars appear on slide 1
-    await expect(page.locator(".onboarding-stars-coding .onboarding-orbit-star")).toHaveCount(2);
-    await expect(page.locator(".onboarding-stars-coding .onboarding-blinking-star")).toHaveCount(2);
-
-    // Verify no detached flame or waving flag overlays exist
-    await expect(page.locator(".onboarding-flame")).toHaveCount(0);
-    await expect(page.locator(".onboarding-flag-wave")).toHaveCount(0);
-
-    // Advance to Slide 2: Discover & Join
-    await page.getByRole("button", { name: "Get Started" }).click();
-    await expect(page.getByRole("heading", { name: "Discover & Join" })).toBeVisible();
-
-    const scene2 = page.locator(".intro-scene");
-    const headingBox2 = page.locator(".intro-heading");
-    const descBox2 = page.locator(".intro-description-container");
-    const pagination2 = page.locator(".intro-pagination");
-
-    const s2Box = await scene2.boundingBox();
-    const h2Box = await headingBox2.boundingBox();
-    const d2Box = await descBox2.boundingBox();
-    const p2Box = await pagination2.boundingBox();
-
-    // Heading container must begin at the EXACT same vertical position (<= 2px tolerance for subpixel rounding)
-    expect(Math.abs((h2Box?.y ?? 0) - (h1Box?.y ?? 0))).toBeLessThanOrEqual(2);
-    // Description follows the actual heading height with one shared gap
-    expect((d2Box?.y ?? 0) - ((h2Box?.y ?? 0) + (h2Box?.height ?? 0))).toBeCloseTo(12, 0);
-    // Pagination dots alignment matches Slide 1 exactly (zero vertical jump)
-    expect(Math.abs((p2Box?.y ?? 0) - (p1Box?.y ?? 0))).toBeLessThanOrEqual(1);
-    // Scene stage height remains identical
-    expect(Math.abs((s2Box?.height ?? 0) - (s1Box?.height ?? 0))).toBeLessThanOrEqual(2);
-
-    // Slide 2: Animated rocket video is present, muted, loop, inline, and fully visible
-    const video = page.locator(".onboarding-video");
-    await expect(video).toBeVisible();
-    await expect(video).toHaveAttribute("src", "/assets/onboarding/rocket-animation.mp4");
-    await expect(video).toHaveAttribute("loop", "");
-    // Previous static illustration must be completely removed
-    await expect(video).not.toHaveAttribute("poster", /.+/);
-    await expect(page.locator(".onboarding-art-rocket")).toHaveCount(0);
-
-    // No animated flame overlay or duplicate elements
-    await expect(page.locator(".onboarding-flame")).toHaveCount(0);
-
-    // Advance to Slide 3: Participate & Grow
-    await page.getByRole("button", { name: "Next", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Participate & Grow" })).toBeVisible();
-
-    const scene3 = page.locator(".intro-scene");
-    const headingBox3 = page.locator(".intro-heading");
-    const descBox3 = page.locator(".intro-description-container");
-    const pagination3 = page.locator(".intro-pagination");
-
-    const s3Box = await scene3.boundingBox();
-    const h3Box = await headingBox3.boundingBox();
-    const d3Box = await descBox3.boundingBox();
-    const p3Box = await pagination3.boundingBox();
-
-    // Slide 3 vertical alignment check
-    expect(Math.abs((h3Box?.y ?? 0) - (h1Box?.y ?? 0))).toBeLessThanOrEqual(2);
-    expect((d3Box?.y ?? 0) - ((h3Box?.y ?? 0) + (h3Box?.height ?? 0))).toBeCloseTo(12, 0);
-    // Pagination dots alignment matches Slide 1 exactly (zero vertical jump)
-    expect(Math.abs((p3Box?.y ?? 0) - (p1Box?.y ?? 0))).toBeLessThanOrEqual(1);
-    expect(Math.abs((s3Box?.height ?? 0) - (s1Box?.height ?? 0))).toBeLessThanOrEqual(2);
-
-    // Slide 3: Flag illustration, revolving stars, and animated stars are present
-    await expect(page.locator(".onboarding-art-flag")).toBeVisible();
-    await expect(page.locator(".onboarding-stars-flag .onboarding-orbit-star")).toHaveCount(2);
-    await expect(page.locator(".onboarding-stars-flag .onboarding-blinking-star")).toHaveCount(2);
-    await expect(page.locator(".onboarding-flag-wave")).toHaveCount(0);
-
-    // Navigate backward using pagination indicator to Slide 2
+    for (let cycle = 0; cycle < 3; cycle++) {
+      await page.getByRole("button", { name: "Go to slide 2" }).click();
+      await expect(page.locator(".onboarding-video")).toBeVisible();
+      await expect
+        .poll(() =>
+          page
+            .locator("video")
+            .evaluate((v: HTMLVideoElement) => !v.paused && v.videoWidth > 0),
+        )
+        .toBe(true);
+      await page.getByRole("button", { name: "Go to slide 3" }).click();
+      await expect
+        .poll(() =>
+          page.locator("video").evaluate((v: HTMLVideoElement) => v.paused),
+        )
+        .toBe(true);
+    }
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.getByRole("button", { name: "Go to slide 2" }).click();
-    await expect(page.getByRole("heading", { name: "Discover & Join" })).toBeVisible();
-
-    // Return to Slide 1
-    await page.getByRole("button", { name: "Go to slide 1" }).click();
-    await expect(page.getByRole("heading", { name: /Welcome to Launchpad/ })).toBeVisible();
-
-    // Ensure no horizontal scroll overflow exists on the page
-    const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
-    expect(hasOverflow).toBe(false);
+    await expect(page.locator(".onboarding-art-rocket")).toBeVisible();
+    await expect(page.locator(".onboarding-video")).toBeHidden();
+    await expect
+      .poll(() =>
+        page.locator("video").evaluate((v: HTMLVideoElement) => v.paused),
+      )
+      .toBe(true);
   });
-
-  test("slide 2 animated video is fully visible without clipping", async ({ page }) => {
+  test("slide 2 animated video is fully visible without clipping", async ({
+    page,
+  }) => {
     await page.goto("http://127.0.0.1:5173/welcome");
     await page.getByRole("button", { name: "Get Started" }).click();
-    await expect(page.getByRole("heading", { name: "Discover & Join" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Discover & Join" }),
+    ).toBeVisible();
 
     const scene = page.locator(".intro-scene");
     const sceneBox = await scene.boundingBox();
@@ -135,7 +142,9 @@ test.describe("Student Onboarding UI - Visual Consistency and Sequential Matrix 
     // The video top must have headroom and not exceed the scene container top
     expect(videoBox.y).toBeGreaterThanOrEqual(sceneBox.y - 1);
     // The video bottom must remain inside the scene container bottom
-    expect(videoBox.y + videoBox.height).toBeLessThanOrEqual(sceneBox.y + sceneBox.height + 1);
+    expect(videoBox.y + videoBox.height).toBeLessThanOrEqual(
+      sceneBox.y + sceneBox.height + 1,
+    );
 
     // Verify video properties
     const videoProps = await video.evaluate((el) => {
@@ -157,7 +166,9 @@ test.describe("Student Onboarding UI - Visual Consistency and Sequential Matrix 
     page,
   }) => {
     await page.goto("http://127.0.0.1:5173/welcome");
-    await expect(page.getByRole("heading", { name: /Welcome to Launchpad/ })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Welcome to Launchpad/ }),
+    ).toBeVisible();
 
     const rocket = page.locator(".heading-rocket");
     await expect(rocket).toBeVisible();
@@ -188,7 +199,9 @@ test.describe("Student Onboarding UI - Visual Consistency and Sequential Matrix 
 
   test("supports swipe gestures between slides", async ({ page }) => {
     await page.goto("http://127.0.0.1:5173/welcome");
-    await expect(page.getByRole("heading", { name: /Welcome to Launchpad/ })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Welcome to Launchpad/ }),
+    ).toBeVisible();
 
     const screen = page.locator(".onboarding-screen");
     const box = await screen.boundingBox();
@@ -207,7 +220,9 @@ test.describe("Student Onboarding UI - Visual Consistency and Sequential Matrix 
       changedTouches: [{ identifier: 0, clientX: endX, clientY: y }],
     });
 
-    await expect(page.getByRole("heading", { name: "Discover & Join" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Discover & Join" }),
+    ).toBeVisible();
 
     // Swipe right (navigate backward to slide 1)
     await screen.dispatchEvent("touchstart", {
@@ -217,19 +232,25 @@ test.describe("Student Onboarding UI - Visual Consistency and Sequential Matrix 
       changedTouches: [{ identifier: 1, clientX: startX, clientY: y }],
     });
 
-    await expect(page.getByRole("heading", { name: /Welcome to Launchpad/ })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Welcome to Launchpad/ }),
+    ).toBeVisible();
   });
 
   test("respects prefers-reduced-motion media query", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("http://127.0.0.1:5173/welcome");
 
-    await expect(page.getByRole("heading", { name: /Welcome to Launchpad/ })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Welcome to Launchpad/ }),
+    ).toBeVisible();
 
     // Under reduced motion, heading lines are immediately visible with opacity 1
     const headingContent = page.locator(".heading-line-content").first();
     await expect(headingContent).toBeVisible();
-    const opacity = await headingContent.evaluate((el) => window.getComputedStyle(el).opacity);
+    const opacity = await headingContent.evaluate(
+      (el) => window.getComputedStyle(el).opacity,
+    );
     expect(opacity).toBe("1");
 
     // Descriptions are also immediately visible
@@ -238,6 +259,8 @@ test.describe("Student Onboarding UI - Visual Consistency and Sequential Matrix 
 
     // Navigation still works cleanly with reduced motion
     await page.getByRole("button", { name: "Get Started" }).click();
-    await expect(page.getByRole("heading", { name: "Discover & Join" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Discover & Join" }),
+    ).toBeVisible();
   });
 });
