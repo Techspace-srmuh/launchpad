@@ -81,10 +81,17 @@ export function AccountPage() {
     finally { setBusy(false); }
   }
   return <section className="onboarding-screen sign-in-screen" aria-labelledby="sign-in-title">
+    <Link className="sign-in-back" href="/welcome"><ArrowLeft aria-hidden="true" />Back to welcome</Link>
     <LaunchpadBrand />
+    <div className="sign-in-art" aria-hidden="true">
+      <span className="sign-in-orbit" />
+      <AstronautDoodle scene="telescope" className="sign-in-astronaut" priority />
+      <span className="sign-in-spark sign-in-spark-one">✦</span>
+      <span className="sign-in-spark sign-in-spark-two">✦</span>
+    </div>
     <div className="sign-in-copy">
       <h1 id="sign-in-title">{session ? "You’re ready to launch" : "Sign in to continue"}</h1>
-      <p>{session ? <>Signed in as <strong>{session.user.email}</strong></> : <>Use your Google account to access<br />Launchpad.</>}</p>
+      <p>{session ? <>Signed in as <strong>{session.user.email}</strong></> : <>Your campus community is one step away.<br />Continue with your Google account.</>}</p>
     </div>
     {loading ? <p role="status">Checking your account…</p> : session ? <div className="sign-in-options">
       <Link className="onboarding-primary" href={isProfileComplete(profile) ? "/" : "/profile"}>{isProfileComplete(profile) ? "Open Launchpad" : "Complete your profile"}<ArrowRight aria-hidden="true" /></Link>
@@ -106,7 +113,7 @@ export function AccountPage() {
       {!client && <p className="onboarding-notice" role="status">Sign-in is unavailable until Launchpad is connected. <Link href="/setup">View setup</Link>.</p>}
     </div>}
     {(error || identityError) && <p className="onboarding-error" role="alert">{error || identityError}</p>}
-    <MoonHorizon />
+    <div className="sign-in-landscape" aria-hidden="true"><MoonHorizon /></div>
   </section>;
 }
 

@@ -27,7 +27,7 @@ export function RocketSweepHeading({
 }: RocketSweepHeadingProps) {
   const fullTitle = lines.join(" ");
   const [visibleLines, setVisibleLines] = useState<boolean[]>(() =>
-    new Array(lines.length).fill(false)
+    new Array(lines.length).fill(false),
   );
   const [raysVisible, setRaysVisible] = useState(false);
 
@@ -153,60 +153,74 @@ export function SequentialDescription({
   const containerRef = useRef<HTMLDivElement>(null);
   const [lines, setLines] = useState<string[]>([...fallbackLines]);
   const [visibleLines, setVisibleLines] = useState<boolean[]>(() =>
-    new Array(fallbackLines.length).fill(false)
+    new Array(fallbackLines.length).fill(false),
   );
 
   // Measure dynamic word wrapping on client for responsive devices
   useLayoutEffect(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
-    const words = text.split(" ");
+    const measure = () => {
+      const words = text.split(" ");
 
-    const measureEl = document.createElement("div");
-    measureEl.className = "intro-description intro-desc-measure";
-    measureEl.style.position = "absolute";
-    measureEl.style.visibility = "hidden";
-    measureEl.style.pointerEvents = "none";
-    measureEl.style.width = `${container.clientWidth || 320}px`;
-    measureEl.style.left = "-9999px";
+      const measureEl = document.createElement("div");
+      measureEl.className = "intro-description intro-desc-measure";
+      measureEl.style.position = "absolute";
+      measureEl.style.visibility = "hidden";
+      measureEl.style.pointerEvents = "none";
+      measureEl.style.width = `${container.clientWidth || 320}px`;
+      measureEl.style.left = "-9999px";
 
-    words.forEach((word) => {
-      const span = document.createElement("span");
-      span.className = "desc-measure-word";
-      span.textContent = `${word} `;
-      measureEl.appendChild(span);
-    });
+      words.forEach((word) => {
+        const span = document.createElement("span");
+        span.className = "desc-measure-word";
+        span.textContent = `${word} `;
+        measureEl.appendChild(span);
+      });
 
-    document.body.appendChild(measureEl);
+      document.body.appendChild(measureEl);
 
-    // Group words with identical offsetTop into visual lines
-    const wordSpans = Array.from(measureEl.children) as HTMLElement[];
-    const detectedLines: string[] = [];
-    let currentLineWords: string[] = [];
-    let currentTop = -1;
+      // Group words with identical offsetTop into visual lines
+      const wordSpans = Array.from(measureEl.children) as HTMLElement[];
+      const detectedLines: string[] = [];
+      let currentLineWords: string[] = [];
+      let currentTop = -1;
 
-    wordSpans.forEach((span) => {
-      const top = span.offsetTop;
-      if (currentTop === -1 || Math.abs(top - currentTop) < 5) {
-        currentLineWords.push(span.textContent?.trim() || "");
-        if (currentTop === -1) currentTop = top;
-      } else {
+      wordSpans.forEach((span) => {
+        const top = span.offsetTop;
+        if (currentTop === -1 || Math.abs(top - currentTop) < 5) {
+          currentLineWords.push(span.textContent?.trim() || "");
+          if (currentTop === -1) currentTop = top;
+        } else {
+          detectedLines.push(currentLineWords.join(" "));
+          currentLineWords = [span.textContent?.trim() || ""];
+          currentTop = top;
+        }
+      });
+
+      if (currentLineWords.length > 0) {
         detectedLines.push(currentLineWords.join(" "));
-        currentLineWords = [span.textContent?.trim() || ""];
-        currentTop = top;
       }
-    });
 
-    if (currentLineWords.length > 0) {
-      detectedLines.push(currentLineWords.join(" "));
-    }
+      document.body.removeChild(measureEl);
 
-    document.body.removeChild(measureEl);
-
-    if (detectedLines.length > 0) {
-      setLines(detectedLines);
-      setVisibleLines(new Array(detectedLines.length).fill(false));
-    }
+      if (detectedLines.length > 0) {
+        setLines((previous) =>
+          previous.join("\n") === detectedLines.join("\n")
+            ? previous
+            : detectedLines,
+        );
+        setVisibleLines((previous) =>
+          detectedLines.map(
+            (_, index) => previous[index] ?? previous.every(Boolean),
+          ),
+        );
+      }
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    return () => observer.disconnect();
   }, [text]);
 
   useEffect(() => {
@@ -248,7 +262,9 @@ export function SequentialDescription({
         <span className="intro-desc-lines" aria-hidden="true">
           {lines.map((lineText, idx) => (
             <span key={`${idx}-${lineText}`} className="desc-line-mask">
-              <span className={`desc-line-content ${visibleLines[idx] ? "is-visible" : ""}`}>
+              <span
+                className={`desc-line-content ${visibleLines[idx] ? "is-visible" : ""}`}
+              >
                 {lineText}
               </span>
             </span>
